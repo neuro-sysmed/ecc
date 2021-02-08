@@ -3,33 +3,25 @@
 # 
 # 
 # 
-# Kim Brugger (20 Sep 2018), contact: kim@brugger.dk
 
 import pprint
 import sys
 
-import ehos.utils
+import eco.utils
 
 pp = pprint.PrettyPrinter(indent=4)
 import time
 import argparse
 from munch import Munch
 
-# python3+ is broken on centos 7, so add the /usr/local/paths by hand
-#sys.path.append("/usr/local/lib/python{}.{}/site-packages/".format( sys.version_info.major, sys.version_info.minor))
-#sys.path.append("/usr/local/lib64/python{}.{}/site-packages/".format( sys.version_info.major, sys.version_info.minor))
 
 
 
-import ehos
-import ehos.htcondor
-import ehos.instances
-import ehos.log_utils as logger
-import ehos.tick_utils as Tick
+import eco
+import eco.instances
+import eco.log_utils as logger
 
 
-condor    = None
-tick      = None
 log_fh    = None
 instances = None
 
@@ -48,31 +40,14 @@ def log_nodes( names:[]) -> None:
 
     sys.stdout.flush()
 
-def setup_tick( config ):
-    if 'influxdb' in config:
-        #s "sending startup entry to influxdb")
-        global tick
-        tick = Tick.Tick(url = config.influxdb.url, database=config.influxdb.db,
-                         user=config.influxdb.username, passwd=config.influxdb.password)
-
-        tick.write_points({"measurement": 'ehos',
-                           "tags": {'host': config.daemon.hostname,
-                                    },
-                           "fields": {'starting_daemon': 1 }})
-
-
-def setup_db_backend( config ):
-    if 'database' in config.daemon:
-        ehos.instances.connect(config.daemon.database)
-
 def open_node_logfile( config ):
     if 'node_log' in config.daemon:
         global log_fh
         log_fh = open(config.daemon.node_log, 'a')
 
 
-def run_daemon( config_files:[]=["/usr/local/etc/ehos.yaml"], cloud_init:str=None, ansible_playbook:str=None ) -> None:
-    """ Creates the ehos daemon loop that creates and destroys nodes etc.
+def run_daemon( config_files:[]=["/usr/local/etc/eco.yaml"], cloud_init:str=None, ansible_playbook:str=None ) -> None:
+    """ Creates the eco daemon loop that creates and destroys nodes etc.
                
     The confirguration file is continously read so it is possible to tweak the behaviour of the system
                
@@ -87,7 +62,7 @@ def run_daemon( config_files:[]=["/usr/local/etc/ehos.yaml"], cloud_init:str=Non
     """
 
 
-    config = ehos.utils.get_configurations(config_files)
+    config = eco.utils.get_configurations(config_files)
 #    pp.pprint( config )
 #    sys.exit()
 
@@ -95,19 +70,17 @@ def run_daemon( config_files:[]=["/usr/local/etc/ehos.yaml"], cloud_init:str=Non
     open_node_logfile( config )
     setup_db_backend( config )
 
-    global condor
-    condor = ehos.htcondor.Condor()
 
-    clouds = ehos.connect_to_clouds( config )
+    clouds = eco.connect_to_clouds( config )
     global instances
-    instances = ehos.instances.Instances()
+    instances = eco.instances.Instances()
     instances.add_clouds( clouds )
 
     new_nodes = []
 
     while ( True ):
 
-        config = ehos.utils.get_configurations(config_files)
+        config = eco.utils.get_configurations(config_files)
 
         # get the current number of nodes
         instances.update(condor.nodes())
@@ -124,10 +97,10 @@ def run_daemon( config_files:[]=["/usr/local/etc/ehos.yaml"], cloud_init:str=Non
         logger.info("Nr of jobs {} ({} are queueing)".format( jobs.job_total, jobs.job_idle))
 
         if ('purge_floating_ips' in config.daemon ):
-            new_nodes = ehos.remove_floating_ips(instances, new_nodes )
+            new_nodes = eco.remove_floating_ips(instances, new_nodes )
 
         if 'influxdb' in config:
-            tick.write_points({"measurement": 'ehos',
+            tick.write_points({"measurement": 'eco',
                                "tags": {'host':config.daemon.hostname},
                                "fields": {'nodes_busy': nodes.node_busy,
                                           'nodes_idle':nodes.node_idle,
@@ -138,7 +111,7 @@ def run_daemon( config_files:[]=["/usr/local/etc/ehos.yaml"], cloud_init:str=Non
         if ( nodes.node_total < config.daemon.nodes_min ):
             logger.info("We are below the min number of nodes, creating {} nodes".format( config.daemon.nodes_min - nodes.node_total))
 
-            node_names = ehos.create_execute_nodes(instances, config, nr=config.daemon.nodes_min - nodes.node_total, execute_config_file=cloud_init)
+            node_names = eco.create_execute_nodes(instances, config, nr=config.daemon.nodes_min - nodes.node_total, execute_config_file=cloud_init)
             log_nodes( node_names )
             new_nodes += node_names
 
@@ -151,7 +124,7 @@ def run_daemon( config_files:[]=["/usr/local/etc/ehos.yaml"], cloud_init:str=Non
             nr_of_nodes_to_delete = min( nodes.node_total - config.daemon.nodes_min, nodes.node_idle -jobs.job_idle , nodes.node_idle - config.daemon.nodes_spare)
             
             logger.info("Deleting {} idle nodes... (1)".format( nr_of_nodes_to_delete))
-            ehos.delete_idle_nodes(instances, condor.nodes(), nr_of_nodes_to_delete)
+            eco.delete_idle_nodes(instances, condor.nodes(), nr_of_nodes_to_delete)
 
             
         # Got room to make some additional nodes
@@ -159,7 +132,7 @@ def run_daemon( config_files:[]=["/usr/local/etc/ehos.yaml"], cloud_init:str=Non
             
             logger.info("We got stuff to do, creating some additional nodes...")
 
-            node_names = ehos.create_execute_nodes(instances, config, config.daemon.nodes_max - nodes.node_total, execute_config_file=cloud_init )
+            node_names = eco.create_execute_nodes(instances, config, config.daemon.nodes_max - nodes.node_total, execute_config_file=cloud_init )
             log_nodes( node_names )
 
 
@@ -181,7 +154,7 @@ def run_daemon( config_files:[]=["/usr/local/etc/ehos.yaml"], cloud_init:str=Non
             nr_of_nodes_to_delete = min( nodes.node_total - config.daemon.nodes_min, nodes.node_idle - config.daemon.nodes_spare)
             
             logger.info("Deleting {} idle nodes... (2)".format( nr_of_nodes_to_delete))
-            ehos.delete_idle_nodes(instances, condor.nodes(), nr_of_nodes_to_delete)
+            eco.delete_idle_nodes(instances, condor.nodes(), nr_of_nodes_to_delete)
             
         else:
             logger.info("The number of execute nodes are running seem appropriate, nothing to change.")
@@ -195,16 +168,16 @@ def run_daemon( config_files:[]=["/usr/local/etc/ehos.yaml"], cloud_init:str=Non
         
 def main():
 
-    parser = argparse.ArgumentParser(description='ehosd: the ehos daemon to be run on the master node ')
+    parser = argparse.ArgumentParser(description='ecod: the eco daemon to be run on the master node ')
     parser.add_argument('-c', '--cloud-init', help="cloud-init file to run when creating the VM")
     parser.add_argument('-a', '--ansible-playbook', help="ansible-playbook to run on newly created VMs")
     parser.add_argument('-l', '--logfile', default=None, help="Logfile to write to, default is stdout")
     parser.add_argument('-v', '--verbose', default=4, action="count",  help="Increase the verbosity of logging output")
-    parser.add_argument('config_files', metavar='config-files', nargs='+', help="yaml formatted config files", default=ehos.utils.find_config_file('ehos.yaml'))
+    parser.add_argument('config_files', metavar='config-files', nargs='+', help="yaml formatted config files", default=eco.utils.find_config_file('eco.yaml'))
 
 
     args = parser.parse_args()
-    logger.init(name='ehosd', log_file=args.logfile )
+    logger.init(name='ecod', log_file=args.logfile )
     logger.set_log_level( args.verbose )
 
     logger.info("Running with config file: {}".format( args.config_files    ))

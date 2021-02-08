@@ -1,7 +1,7 @@
-# EHOS
-**E**lastic **H**TCondor **O**penStack **S**caling - Pronounced EOS
+# EOSC
+**E**lastic **O**penStack  **C**loud **C**luster for usegalaxy.no
 
-EHOS is a cloud based HPC where the number of compute nodes that
+EOCC is a cloud based HPC where the number of compute nodes that
 scales according to a workload.  This ensures that resources are not
 wasted when during computational lulls.
 

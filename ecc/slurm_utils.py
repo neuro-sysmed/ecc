@@ -90,6 +90,58 @@ def nodes_total():
     return count
 
 
+def _show_node(id:str) -> str:
+    cmd = 'scontrol show node={id}'
+    run = run_utils.launch_cmd( cmd )
+    return run.stdout
+
+def node_state(id:str) -> str:
+    info = _show_node(id)
+    for line in info.split('\n'):
+        State=IDLE
+        state = re.match(r'State=(w+)', line)
+        print(state)
+        if state:
+            return state
+
+    return None
+
+
+def node_cpu_info(id:str) -> dict:
+
+    info = _show_node(id)
+    for line in info.split('\n'):
+        cpus = re.match(r'CPUAlloc=(\d+) CPUTot=(\d+) CPULoad=(\d+.\d\d)', line)
+        print(cpus)
+        if cpus:
+            return cpus
+
+
+    return None
 
 
 
+def free_resources():
+    nodes = nodes()
+
+    cpus_total = 0
+    cpus_free  = 0
+
+    for node in nodes:
+        cpu_free, cpu_total  = node_cpu_info( node['id'])
+
+        cpus_free  += cpu_free
+        cpus_total += cpu_total
+
+
+    return cpus_free, cpus_total
+
+
+def add_cloud_node(name, ip_address):
+    cmd = f"scontrol update nodename={name} nodeaddr={ip_address} nodehostname={name}"
+    run = run_utils.launch_cmd( cmd )
+
+
+def suspend_node(name):
+    cmd = f"scontrol update nodename={name} state=down"
+    run = run_utils.launch_cmd( cmd )

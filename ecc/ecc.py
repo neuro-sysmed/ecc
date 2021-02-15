@@ -339,3 +339,26 @@ def create_master_node(instances, config:Munch, master_file:str):
     
 
     return master_id, cloud.server_ip( master_id )
+
+
+def next_id(names:str, regex:str=None) -> int:
+    if regex is None:
+        regex = config.ecc.nodes.name_regex
+    regex = re.compile(regex)
+
+    ids = []
+    for name in names:
+        g = re.match( regex, name)
+        if g:
+            ids.append( int(g.group(1)))
+
+    if ids == []:
+        return 1
+
+    ids = sorted(ids)
+    for i in range(0, len(ids) - 1):
+        if ids[ i ] + 1 < ids[ i + 1]:
+            return ids[ i ] + 1
+
+    return ids[-1 ] + 1
+

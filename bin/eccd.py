@@ -28,7 +28,6 @@ def init(config: Munch):
     ecc.set_config( config )
     ecc.openstack_connect(config.openstack)
 
-
 def run_daemon(config_files: [] = ["/usr/local/etc/ecc.yaml"], cloud_init: str = None,
                ansible_playbook: str = None) -> None:
     """ Creates the ecc daemon loop that creates and destroys nodes etc.

@@ -14,16 +14,14 @@ import pprint
 pp = pprint.PrettyPrinter(indent=4)
 import time
 
-import ehos.log_utils as logger
-
 import openstack
-
-import ehos.vm 
-
-
+import kbr.log_utils as logger
+import ecc.vm
 
 
-class Openstack( ehos.vm.Vm ):
+
+
+class Openstack( object ):
 
 
 
@@ -62,11 +60,10 @@ class Openstack( ehos.vm.Vm ):
             raise ConnectionError
 
 
-    def connect(self, cloud_name:str, auth_url:str, project_name:str, username:str, password:str, region_name:str, user_domain_name:str, project_domain_name:str, **kwargs  ):
+    def connect(self, auth_url:str, project_name:str, username:str, password:str, region_name:str, user_domain_name:str, project_domain_name:str, **kwargs  ):
         """ Connects to a openstack cloud
 
         Args:
-          cloud_name: name of the cloud this information relates to
           auth_url: authentication url
           project_name: name of project to connect to
           username: name of the user
@@ -91,8 +88,7 @@ class Openstack( ehos.vm.Vm ):
             project_domain_name=project_domain_name
         )
 
-        self._name = cloud_name
-        logger.debug("Connected to openstack server {}".format( cloud_name ))
+        logger.debug("Connected to openstack server")
         
 
     def server_create(self, name:str, image:str, flavor:str, network:str, key:str, security_groups:str, userdata_file:str=None, **kwargs): 
@@ -153,25 +149,13 @@ class Openstack( ehos.vm.Vm ):
             raise e
 
 
-    def server_list(self):
-        """ gets a list of servers on the openstack cluster
-        
-        Args:
-        None
-        
-        Returns:
-        server dict ( name -> id )
-        
-        Raises:
-        None
-        """
+    def servers(self):
 
-        servers = {}
+        servers = []
 
         for server in self._connection.compute.servers():
-            server.name = re.sub("_","-", server.name)
-            servers[ server.id ] = {'id':server.id, 'name':server.name.lower(), 'vm_state':"vm_"+server.status.lower()}
-            servers[ server.name.lower() ] = servers[ server.id ]
+            ip = self.server_ip(server.id)
+            servers.append({'id':server.id, 'name':server.name.lower(), 'status': server.status.lower(), 'ip':ip})
 
         logger.debug("Servers: \n{}".format( pp.pformat( servers )))
 
@@ -357,72 +341,6 @@ class Openstack( ehos.vm.Vm ):
             time.sleep(1)
 
         logger.info("Server stopped id:{} ".format( id ))
-
-
-    def _wait_for_image_creation(self, image_name:str, timeout:int=600):
-        """ Wait for a single image with the given name exists and them return the id of it
-
-        Args:
-        image_name: name of the image
-        timeout: how long to wait for the image to be created.
-        Returns:
-        image id (str)
-
-        Raises:
-        None
-        """
-
-        logger.info("Waiting for image creation image_name:{} ".format( image_name ))
-        while ( True ):
-
-            nr_images = 0
-            image_id = None
-            image_status = None
-            for image in self._connection.image.images():
-                if image.name == image_name:
-                    nr_images += 1
-                    image_id = image.id
-                    image_status = image.status.lower()
-
-            # Only one image with our name exist, so return its id
-            if nr_images == 1 and image_status == 'active':
-                logger.info("Created image from server id{}, image_id:{} ".format( id, image_id ))
-                return image_id
-
-            # decrease the timeout counter, if hits 0 raise an exception, otherwise sleep a bit
-            timeout -= 1
-            if ( not timeout ):
-                raise TimeoutError
-            time.sleep(1)
-            logger.debug("sleeping in wait_for_image_creation TO:{} NR:{} status:{}".format( timeout, nr_images, image_status ))
-        
-    def make_image_from_server(self,  id:str, image_name:str, timeout:int=200):
-        """ creates an image from a server. Due to some bug in the openstack we spin it down before doing the backup
-
-        The function has a timeout variable to ensure we dont end up in an infinite loop
-        
-        Args:
-        id: server name/id
-        image_name: the name of the backup to create
-        timeout: how long to wait for the image to be created.
-        
-        Returns:
-        None
-        
-        Raises:
-        TimeoutError: if the image is not created within the timeout time
-        
-        """
-
-
-
-        logger.info("Creating an image from server id{}, image_name:{} ".format( id, image_name ))
-        self.server_stop( id )
-        # rotation == 1 will only keep one version of this name, not sure about backup type
-        self._connection.compute.backup_server( id, image_name, backup_type='', rotation=1 )
-        
-        return self._wait_for_image_creation( image_name )
-
 
     
     

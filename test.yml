@@ -1,0 +1,10 @@
+---
+- hosts: any
+  tasks:
+    - debug:
+        msg: At all
+
+- hosts: "{{ dynamic_host | default('nodes')}}"
+  tasks:
+    - debug:
+        msg: At nodes

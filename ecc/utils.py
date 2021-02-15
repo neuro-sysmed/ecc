@@ -9,14 +9,10 @@ import string
 import subprocess
 import time
 from typing import List, Tuple
-import pprint as pp
-
-import munch
 
 from munch import Munch
 
-from ehos import log_utils as logger
-import ehos.db as ehos_db
+import kbr.log_utils as logger
 
 
 def get_host_ip() -> str:
@@ -63,33 +59,11 @@ def get_host_name() -> str:
 
 
 def timestamp() -> int:
-    """ gets a sec since 1.1.1970
-
-    "Args:
-      None
-
-    Returns:
-      Secs since the epoc
-
-    Raises:
-      None
-    """
 
     return int(time.time())
 
 
 def datetimestamp() -> str:
-    """ Creates a timestamp so we can make unique server names
-
-    Args:
-      none
-
-    Returns:
-      timestamp (string)
-
-    Raises:
-      none
-    """
     ts = time.time()
     ts = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%dT%H%M%S')
 
@@ -243,32 +217,6 @@ def readin_config_file(config_file:str) -> Munch:
     return config
 
 
-def store_config_in_db_if_empty(url:str, config:Munch) -> Munch:
-
-    db = ehos_db.DB()
-    db.connect( url )
-
-    settings = db.settings()
-    if settings is None or settings == {}:
-        db.store_settings( config )
-
-    db.disconnect()
-
-
-def config_from_db(url:str) -> Munch:
-
-    db = ehos_db.DB()
-    db.connect( url )
-
-    settings = db.settings()
-    config = munch.munchify( settings )
-
-    return config
-
-
-
-
-
 def dict_validation(data:dict, template:dict) -> bool:
 
     for key in template.keys():
@@ -418,41 +366,3 @@ def patch_file(filename:str, pattern:str=None, replace:str=None, patterns:List[ 
             fh.write( lines )
             fh.close()
 
-
-def make_uid_domain_name(length:int=3):
-    """ Makes a 'random' uid domain name
-
-    Args:
-      length: domain length
-
-    Returns:
-      uid domain name (str)
-
-    Raises:
-      RuntimeError if length is longer than our word list
-
-    """
-
-    quote = "Piglet was so excited at the idea of being Useful that he forgot to be frightened any more, and when Rabbit went on to say that Kangas were only Fierce during the winter months, being at other times of an Affectionate Disposition, he could hardly sit still, he was so eager to begin being useful at once"
-
-#    quote = "The more he looked inside the more Piglet wasnt there"
-    quote = re.sub(",", "", quote);
-
-    words = list(set( quote.lower().split(" ")))
-
-    if (len(words) < length):
-        raise RuntimeError( 'length required is longer than dictonary used')
-
-    choices = []
-    while( True ):
-        word = random.choice(words)
-
-        if word in choices:
-            continue
-
-        choices.append( word )
-
-        if (len( choices ) == length):
-            break
-
-    return('.'.join(choices))

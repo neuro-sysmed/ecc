@@ -1,8 +1,4 @@
-htcondor
-#typing
+git+https://github.com/brugger/kbr-tools.git
 munch
 openstacksdk
 #python-openstackclient
-records
-psycopg2-binary
-records

@@ -6,17 +6,18 @@
 # Kim Brugger (14 Sep 2018), contact: kim@brugger.dk
 
 import sys
+import re
 import pprint
-from ehos.utils import make_node_name
+from ecc.utils import make_node_name
 
 pp = pprint.PrettyPrinter(indent=4)
 import random
 
 from munch import Munch
 
-import ehos.log_utils as logger
-import ehos.openstack
-import ehos.htcondor as condor
+import ecc.openstack_class as openstack_class
+import ecc.slurm_utils as slurm_utils
+import ecc.utils as ecc_utils
 
 # Not sure if this is still needed.
 import logging
@@ -27,61 +28,93 @@ logging.getLogger('concurrent').setLevel(logging.CRITICAL)
 logging.getLogger('openstack').setLevel(logging.CRITICAL)
 logging.getLogger('dogpile').setLevel(logging.CRITICAL)
 
+config = None
+openstack = None
+nodes = {}
+
+def set_config(new_config:dict):
+    global config
+    config = new_config
 
 
-def connect_to_clouds(config:Munch) -> list:
-    """ Connects to the clouds spefified in the config file
+def openstack_connect(config):
+    global openstack
+    openstack = openstack_class.Openstack()
+    openstack.connect(**config)
 
-    Args:
-      config: from the yaml input file
-    
-    Returns:
-      connection names (list)
+def servers(filter:str=None):
+    servers = openstack.servers()
 
-    Raises:
-      RuntimeError if unknown backend
-    """
+    if filter:
+        filter = re.compile(filter)
+        tmp_list = []
+        for server in servers:
+ #           print("--", server['name'], filter.match(server['name']))
+            if re.search(filter, server['name']):
+                tmp_list.append(server)
 
-    clouds = {}
+        servers = tmp_list
 
-    for cloud_name in config.clouds:
-
-        # Ignore the backend setting, as we only support openstack right now.
-#        config.clouds[ cloud_name ].backend = 'openstack'
-
-        if ( 1 or config.clouds[ cloud_name ].backend == 'openstack'):
-
-            cloud_config = config.clouds[ cloud_name ]
-
-            cloud_handle = ehos.openstack.Openstack()
-            cloud_handle.connect( cloud_name=cloud_name,
-                           **cloud_config)
-
-            clouds[cloud_name] = cloud_handle
-            logger.debug("Successfully connected to the {} openStack service".format( cloud_name ))
-
-        else:
-            logger.critical( "Unknown VM backend {}".format( config.clouds[ cloud_name ].backend ))
-            raise RuntimeError( "Unknown VM backend {}".format( config.clouds[ cloud_name ].backend ))
-                   
-    return clouds
+    return servers
 
 
+def update_nodes_status():
+    vnodes = servers(config.ecc.nodes.name_regex)
+    snodes = slurm_utils.nodes()
 
-def vm_list( clouds:dict ):
-    """ returns a list of all vm running in all clouds """
+    global nodes
+    for vnode in vnodes:
+        if vnode['name'] not in nodes:
+            nodes[vnode['name']] = {}
+            nodes[vnode['name']]['vm_id'] = vnode['id']
+            nodes[vnode['name']]['vm_state'] = vnode['status']
+            nodes[vnode['name']]['timestamp'] = ecc_utils.timestamp()
 
-    vms = {}
-    for cloud_name in clouds:
-        vm_list = clouds[ cloud_name].server_list()
+        elif 'vm_state' not in nodes[vnode['name']] or nodes[vnode['name']]['vm_state'] != vnode['status']:
+            nodes[vnode['name']]['vstate'] = vnode['status']
+            nodes[vnode['name']]['timestamp'] = ecc_utils.timestamp()
 
-        for vm_id in vm_list.keys():
-            vm = vm_list[ vm_id ]
-            vm[ 'cloud_name'] = cloud_name
-            vms[ vm_id ] = vm
 
-    return vms
+    for snode in snodes:
+        if snode['name'] not in nodes:
+            nodes[snode['name']] = {}
+            nodes[snode['name']]['slurm_state'] = snode['state']
+            nodes[snode['name']]['timestamp'] = ecc_utils.timestamp()
 
+        elif 'slurm_state' not in nodes[snode['name']]or nodes[snode['name']]['slurm_state'] != snode['state']:
+            nodes[snode['name']]['slurm_state'] = snode['state']
+            nodes[snode['name']]['timestamp'] = ecc_utils.timestamp()
+
+
+    pp.pprint(nodes)
+
+
+def nodes_idle(update:bool=False):
+
+    if update:
+        update_nodes_status()
+
+    count = 0
+    for node in nodes:
+        node = nodes[ node ]
+        if node.get('slurm_state', None) in ['mix', 'idle'] and node.get('vm_state', None) == 'active':
+            count += 1
+
+    return count
+
+
+def nodes_total(update:bool=False):
+
+    if update:
+        update_nodes_status()
+
+    count = 0
+    for node in nodes:
+        node = nodes[ node ]
+        if node.get('slurm_state', None) in ['mix', 'idle', 'alloc'] and node.get('vm_state', None) == 'active':
+            count += 1
+
+    return count
 
 
 def delete_idle_nodes(instances, nodes, nr:int=1, max_heard_from_time:int=300):
@@ -118,7 +151,7 @@ def delete_idle_nodes(instances, nodes, nr:int=1, max_heard_from_time:int=300):
         if ( node[ 'node_state' ] == 'node_idle' and node['vm_state'] in ['vm_active', 'vm_booting']):
             logger.debug("Killing node {}".format( node_name ))
 
-            ehos.condor.turn_off_fast( node_name )
+
             cloud = instances.get_cloud( node['cloud'])
 
             volumes = cloud.volumes_attached_to_server(node['id'])
@@ -142,22 +175,6 @@ def delete_idle_nodes(instances, nodes, nr:int=1, max_heard_from_time:int=300):
 
 
     return
-
-
-
-def remove_floating_ips(instances, node_names):
-
-    for node_name in node_names:
-        node = instances.find( name=node_name )
-        print( node_names)
-        print( node )
-        cloud_handle = instances.get_cloud( node['cloud'] )
-        # for cpouta remove any floating IPs
-        if (cloud_handle.server_remove_floating_ips( node['id'] ) > 0):
-            node_names.remove( node_name )
-
-    return node_names
-
 
 
 
@@ -268,66 +285,6 @@ def create_execute_nodes(instances, config:Munch, execute_config_file:str=None, 
 
 
 
-
-def create_images(instances, config:Munch, config_file:str, delete_original:bool=False):
-    """ Create a number of images to be used later to create nodes
-
-    Args:
-       config: config settings
-       config_file: config file for base system
-       delete_original, delete the server after image creation
-
-    Returns:
-      dict of cloud-name : image-id
-    
-    Raises:
-      RuntimeError if unknown node-allocation method
-    """
-
-    clouds = list(instances.clouds().keys())
-
-    images = {}
-    
-    for cloud_name in clouds:
-        cloud = instances.get_cloud( cloud_name )
-
-        logger.info("Creating base server in cloud '{}'".format( cloud_name ))
-
-        node_name = make_node_name(config.ehos.project_prefix, "base")
-
-
-        resources = cloud.get_resources_available()
-        if ( resources['ram'] > config.daemon.get('min_ram', 1)*1024 and
-             resources['cores'] > config.daemon.get('min_cores', 1) and
-             resources['instances'] > config.daemon.get('min_instances',1 )):
-
-            vm_id = cloud.server_create( name=node_name,
-                                         userdata_file=config_file,
-                                         **config.ehos )
-
-        
-            logger.info("Created vm server, waiting for it to come online")
-
-
-            # Wait for the server to come online and everything have been configured.    
-            cloud.wait_for_log_entry(vm_id, "The EHOS vm is up after ", timeout=1200)
-            logger.info("VM server is now online")
-            
-            image_name = make_node_name(config.ehos.project_prefix, "image")
-            image_id = cloud.make_image_from_server( vm_id,  image_name )
-            
-            logger.info("Created image {} from {}".format( image_name, node_name ))
-            
-            images[ cloud_name ] = image_id
-
-            if ( delete_original):
-                cloud.server_delete( vm_id )
-        else:
-            logger.warn("Not enough resources available in '{}'  to create VM".format( cloud_name))
-            images[ cloud_name ] = None
-
-                
-    return images
 
 
 def create_master_node(instances, config:Munch, master_file:str):

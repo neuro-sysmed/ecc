@@ -16,9 +16,6 @@ def get_requirements():
     file_handle = open('requirements.txt', 'r')
     data = file_handle.read()
     file_handle.close()
-
-
-    print( data )
     return data.split("\n")
 
 

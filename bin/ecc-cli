@@ -1,0 +1,186 @@
+#!/usr/bin/env python3
+
+import argparse
+import pprint as pp
+import sys
+import re
+
+from tabulate import tabulate
+
+sys.path.append(".")
+
+import kbr.config_utils as config_utils
+import kbr.log_utils as logger
+import kbr.version_utils as version_utils
+import kbr.args_utils as args_utils
+import kbr.string_utils as string_utils
+import kbr.type_utils as type_utils
+
+sys.path.append(".")
+import ecc
+import ecc.cloudflare_utils as cloudflare_utils
+
+
+version = version_utils.as_string()
+config = None
+program_name = 'ecc-cli'
+
+def init(args):
+    global config
+    config = config_utils.readin_config_file( args.config )
+
+    logger.init(name=program_name, log_file=config.ecc.get('logfile', None))
+    logger.set_log_level( args.verbose )
+    logger.info(f'{program_name} (v:{version})')
+    config.ecc.name_regex = config.ecc.name_template.format("(\d+)")
+    ecc.set_config( config )
+    ecc.openstack_connect(config.openstack)
+    cloudflare_utils.init(config.ecc.cloudflare_apikey, config.ecc.cloudflare_email)
+
+
+
+
+def add_vms(commands):
+    if len(commands) == 0:
+        commands.append(1)
+
+    try:
+        count = int(commands.pop(0))
+    except:
+        if count != 'help':
+            print(f"Error: Unknown command '{count}'\n")
+
+        print("Help:")
+        print("==========================")
+        print(f"{program_name} create [number, default=1]")
+
+
+    for _ in range(0, int(count)):
+        ecc.create_node(cloud_init_file=config.ecc.cloud_init)
+
+def delete_vms(ids:[]):
+
+    if 'help' in ids:
+        print("Help:")
+        print("==========================")
+        print(f"{program_name} delete [number, default=1]")
+        return
+
+    ecc.delete_nodes(ids)
+
+
+def list_vms(commands):
+    nodes = ecc.servers()
+
+    all_servers = False
+
+    if len(commands) and commands[0] == 'all':
+        all_servers = True
+    elif len(commands):
+        print("Help:")
+        print("==========================")
+        print(f"{program_name} list<all>")
+        return
+
+    filter = re.compile(config.ecc.name_regex)
+    tmp_nodes = []
+    for node in nodes:
+        node['ip'] = ','.join(node['ip'])
+        if filter.search( node['name']):
+            if all_servers:
+                node['ecc-member'] = 'true'
+            tmp_nodes.append( node )
+        else:
+            if all_servers:
+                node['ecc-member'] = 'false'
+                tmp_nodes.append( node )
+
+    nodes = tmp_nodes
+    print( tabulate(nodes, headers="keys", tablefmt="psql" ))
+
+
+def pool_size(commands):
+
+    if len(commands)  == 0 or 'help' in commands:
+        print("Help:")
+        print("==========================")
+        print(f"{program_name} size <nr of servers in cluster>")
+        return
+
+
+    size = int(commands[0])
+
+    nodes = ecc.servers( config.ecc.name_regex )
+    if len(nodes) > size:
+        logger.info(f'We have to many nodes, will delete {len(nodes) - size}')
+        nodes_to_cull = []
+        for n in nodes:
+            nodes_to_cull.append( n['id'])
+            if len( nodes_to_cull) == len(nodes) - size:
+                break
+        delete_vms( size - len(nodes) )
+    elif len(nodes) < size:
+        logger.info(f'We are a few nodes short, will create {size - len(nodes)}')
+        add_vms( size - len(nodes) )
+    else:
+        logger.info('Nothing to do, we have the perfect number of nodes')
+
+
+
+
+
+
+
+def main():
+    commands = ['add', 'delete', 'list', 'size', 'help']
+
+    parser = argparse.ArgumentParser(description=f'nga_cli: command line tool for the NGA ({version})')
+
+    parser.add_argument('-c', '--config', help="NGA config file, or set env NGA_CONF",
+                        default=args_utils.get_env_var('ECC_CONF'))
+    parser.add_argument('-v', '--verbose', default=4, action="count", help="Increase the verbosity of logging output")
+    parser.add_argument('command', nargs='*', help="{}".format(",".join(commands)))
+
+    args = parser.parse_args()
+
+#    config.ecc.log_level = args.verbose
+    init( args )
+
+    if args.config is None:
+        parser.print_usage()
+        sys.exit(1)
+
+    global verbose
+    verbose = args.verbose
+
+
+
+    args_utils.min_count(1, len(args.command),
+                         msg="{} takes one of the following commands: {}".format(program_name, string_utils.comma_sep(commands)))
+
+    command = args.command.pop(0)
+    if command == 'list':
+        list_vms(args.command)
+        sys.exit()
+    elif command == 'add':
+        add_vms(args.command)
+    elif command == 'delete':
+        delete_vms(args.command)
+        sys.exit()
+    elif command == 'size':
+        pool_size(args.command)
+        sys.exit()
+    elif command == 'run-playbook':
+        export_subcommand(config, args.command)
+        sys.exit()
+    else:
+        print("The tool support the following commands: {}\n".format(string_utils.comma_sep(commands)))
+        parser.print_usage()
+        parser.add_argument('command', nargs='+', help="{}".format(",".join(commands)))
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
+
+

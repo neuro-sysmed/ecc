@@ -11,19 +11,15 @@ import sys
 import os
 import re
 import pprint
+
 pp = pprint.PrettyPrinter(indent=4)
 import time
 
 import openstack
 import kbr.log_utils as logger
-import ecc.vm
 
 
-
-
-class Openstack( object ):
-
-
+class Openstack(object):
 
     def __init__(self):
         """ The init function, currently just sets the name of the backend 
@@ -41,7 +37,7 @@ class Openstack( object ):
 
         self._backend = "openstack"
         self._connection = None
-    
+
     def check_connection(self):
         """ Checks that there is a connection to the openstack, otherwise will raise an exception
 
@@ -55,12 +51,12 @@ class Openstack( object ):
         ConnectionError if not connected
         """
 
-        if  self._connection is None:
+        if self._connection is None:
             logger.critical("No connection to openstack cloud")
             raise ConnectionError
 
-
-    def connect(self, auth_url:str, project_name:str, username:str, password:str, region_name:str, user_domain_name:str, project_domain_name:str, **kwargs  ):
+    def connect(self, auth_url: str, project_name: str, username: str, password: str, region_name: str,
+                user_domain_name: str, project_domain_name: str, **kwargs):
         """ Connects to a openstack cloud
 
         Args:
@@ -77,7 +73,7 @@ class Openstack( object ):
         Raises:
           None
         """
-        
+
         self._connection = openstack.connect(
             auth_url=auth_url,
             project_name=project_name,
@@ -89,9 +85,9 @@ class Openstack( object ):
         )
 
         logger.debug("Connected to openstack server")
-        
 
-    def server_create(self, name:str, image:str, flavor:str, network:str, key:str, security_groups:str, userdata_file:str=None, **kwargs): 
+    def server_create(self, name: str, image: str, flavor: str, network: str, key: str, security_groups: str,
+                      userdata_file: str = None, **kwargs):
         """ creates and spins up a server
     
         Args:
@@ -109,26 +105,27 @@ class Openstack( object ):
           None
         """
 
-    
+        print(f"Name -- {name}")
+
         self.check_connection()
 
-        if ( self.get_images(name=image) == []):
+        if (self.get_images(name=image) == []):
             logger.critical("Image {} does not exist in the openstack instance".format(image))
-            raise( RuntimeError("Image {} does not exist in the openstack instance".format(image)))
+            raise (RuntimeError("Image {} does not exist in the openstack instance".format(image)))
 
         try:
-            if ( userdata_file is not None):
-                user_data_fh = open( userdata_file, 'r')
+            if (userdata_file is not None):
+                user_data_fh = open(userdata_file, 'r')
 
                 server = self._connection.create_server(name,
-                                                       image=image,
-                                                       flavor=flavor,
-                                                       network=network,
-                                                       key_name=key,
-                                                       security_groups=security_groups,
-                                                       userdata=user_data_fh,
-                                                       wait=True,
-                                                       auto_ip=True)
+                                                        image=image,
+                                                        flavor=flavor,
+                                                        network=network,
+                                                        key_name=key,
+                                                        security_groups=security_groups,
+                                                        userdata=user_data_fh,
+                                                        wait=True,
+                                                        auto_ip=True)
             else:
                 server = self._connection.create_server(name,
                                                         image=image,
@@ -139,15 +136,13 @@ class Openstack( object ):
                                                         wait=True,
                                                         auto_ip=True)
 
+            logger.debug("Created server id:{} ip:{}".format(server.id, self.server_ip(server.id)))
 
-            logger.debug("Created server id:{} ip:{}".format( server.id, self.server_ip(server.id)))
-        
             return server.id
 
         except Exception as e:
-            print( e )
+            print(e)
             raise e
-
 
     def servers(self):
 
@@ -155,15 +150,25 @@ class Openstack( object ):
 
         for server in self._connection.compute.servers():
             ip = self.server_ip(server.id)
-            servers.append({'id':server.id, 'name':server.name.lower(), 'status': server.status.lower(), 'ip':ip})
+            servers.append({'id': server.id, 'name': server.name.lower(), 'status': server.status.lower(), 'ip': ip})
 
-        logger.debug("Servers: \n{}".format( pp.pformat( servers )))
-
+        logger.debug("Servers: \n{}".format(pp.pformat(servers)))
         return servers
 
 
-    
-    def server_delete(self, id:str):
+    def server(self, id:str):
+
+        return self._connection.compute.find_server(id)
+
+
+    def server_names(self) -> []:
+        names = []
+        for server in self.servers():
+            names.append(server['name'])
+
+        return names
+
+    def server_delete(self, id: str):
         """ Deletes a server instance
 
         Args:
@@ -177,22 +182,14 @@ class Openstack( object ):
         """
 
 
-        if ("." in id):
-            id = re.sub(r'\..*', '', id)
+        if self.server(id) is None:
+            logger.debug("Unknown server to delete id:{}".format(id))
+            raise RuntimeError("Unknown server {}".format(id))
 
-        servers = self.server_list()
-        #    pp.pprint( servers )
+        self._connection.delete_server(id)
+        logger.debug("Deleted server id:{}".format(id))
 
-        if id not in servers.keys():
-            logger.debug("Unknown server to delete id:{}".format( id ))
-            raise RuntimeError( "Unknown server {}".format( id ))
-
-
-        self._connection.delete_server( id )
-        logger.debug("Deleted server id:{}".format( id ))
-
-
-    def server_log(self, id:str):
+    def server_log(self, id: str):
         """ streams the dmesg? log from a server
         
         Args:
@@ -206,9 +203,9 @@ class Openstack( object ):
         """
 
         # needs a check to ensure that something was returned! Will crash!
-        return( self._connection.compute.get_server_console_output( id )['output'])
+        return (self._connection.compute.get_server_console_output(id)['output'])
 
-    def server_log_search(self,  id:str, match:str='The EHOS vm is up after '):
+    def server_log_search(self, id: str, match: str):
         """ get a server log and searches for a match 
         
         Args:
@@ -222,18 +219,19 @@ class Openstack( object ):
           None    
         """
 
-        log = self.server_log( id )
-        logger.debug("Spooling server log for id:{}".format( id ))
-        
+        log = self.server_log(id)
+        logger.debug("Spooling server log for id:{}".format(id))
+
         results = []
-        
+        logger.debug( log )
+
         for line in log.split("\n"):
-            if ( re.search( match, line)):
-                results.append( line )
+            if (re.search(match, line)):
+                results.append(line)
 
         return results
 
-    def wait_for_log_entry(self, id:str, match:str, timeout:int=400):
+    def wait_for_log_entry(self, id: str, match: str = 'The ecc node is up', timeout: int = 400):
         """ continually checks a server log until a string match is found
 
         Args:
@@ -248,26 +246,23 @@ class Openstack( object ):
         TimeoutError if entry not found before timeout is 
         """
 
-        logger.debug("Waiting for log entry  id:{} --> entry:{}".format( id, match ))
+        logger.debug("Waiting for log entry  id:{} --> entry:{}".format(id, match))
 
-        while( True ):
-            matches = self.server_log_search( id, match)
+        while (True):
+            matches = self.server_log_search(id, match)
 
             if matches is not None and matches != []:
                 return matches
-            
+
             timeout -= 1
-            if ( not timeout):
-                raise TimeoutError("Timed out waiting for log entry: {}".format( match ))
+            if (not timeout):
+                raise TimeoutError("Timed out waiting for log entry: {}".format(match))
 
             #        print(". {}".format( timeout))
-            time.sleep( 1 )        
-            logger.debug("sleeping in wait_for_log_entry TO:{}".format( timeout ))
+            time.sleep(1)
+            logger.debug("sleeping in wait_for_log_entry TO:{}".format(timeout))
 
-
-
-    
-    def server_ip(self, id:str, ipv:int=4):
+    def server_ip(self, id: str, ipv: int = 4):
         """ returns the ip address of a server
         
         Args:
@@ -282,33 +277,32 @@ class Openstack( object ):
         """
 
         ips = []
-        server = self._connection.compute.get_server( id )
+        server = self._connection.compute.get_server(id)
 
-        #print( server.addresses )
+        # print( server.addresses )
         for network in server.addresses:
-            for nic in server.addresses[ network]:
-                if ( nic['version'] == ipv):
-                    ips.append( nic['addr'] )
+            for nic in server.addresses[network]:
+                if (nic['version'] == ipv):
+                    ips.append(nic['addr'])
 
         return ips
 
-
-    def server_remove_floating_ips(self, id:str) -> None:
+    def server_remove_floating_ips(self, id: str) -> None:
         """ removes floating IPs from a server, this is a cpouta fix"""
-        server = self._connection.compute.get_server( id )
+        server = self._connection.compute.get_server(id)
         logger.debug('Checking if Floating IP is assigned to testing_instance...')
         ips_removed = 0
         for values in server.addresses.values():
             for address in values:
                 if address['OS-EXT-IPS:type'] == 'floating':
-                    logger.debug( "Removing floating ip: {}".format( address['addr'] ))
-                    #server.remove_floating_ip_from_server(address=address['addr'])
+                    logger.debug("Removing floating ip: {}".format(address['addr']))
+                    # server.remove_floating_ip_from_server(address=address['addr'])
                     self._connection.compute.remove_floating_ip_from_server(server=server, address=address['addr'])
                     ips_removed += 1
 
         return ips_removed
 
-    def server_stop(self, id:str, timeout:int=300):
+    def server_stop(self, id: str, timeout: int = 300):
         """ stops a server
         
         Args:
@@ -322,28 +316,25 @@ class Openstack( object ):
         TimeoutError: if the server is not in shutdown status within the timeout time
         """
 
-
         self.check_connection()
-        logger.debug("Stopping server id{} ".format( id ))
-        
-        server = self._connection.compute.get_server( id )
-        self._connection.compute.stop_server( server )
-        while ( True ):
-            server = self._connection.compute.get_server( id )
-            if ( server.status.lower() == 'shutoff'):
+        logger.debug("Stopping server id{} ".format(id))
+
+        server = self._connection.compute.get_server(id)
+        self._connection.compute.stop_server(server)
+        while (True):
+            server = self._connection.compute.get_server(id)
+            if (server.status.lower() == 'shutoff'):
                 return
 
             timeout -= 1
-            if ( not timeout ):
+            if (not timeout):
                 raise TimeoutError('timeout before the VM was shutdown')
 
-            logger.debug("sleeping in server stop TO:{} status:{}".format( timeout, server.status ))
+            logger.debug("sleeping in server stop TO:{} status:{}".format(timeout, server.status))
             time.sleep(1)
 
-        logger.info("Server stopped id:{} ".format( id ))
+        logger.info("Server stopped id:{} ".format(id))
 
-    
-    
     def get_resources(self):
         """ get the resources available for the cloud
 
@@ -356,30 +347,26 @@ class Openstack( object ):
         Raises:
           None
         """
-        
+
         limits = self._connection.compute.get_limits()
-#        pp.pprint( self._connection.block_storage.get_limits())
+        #        pp.pprint( self._connection.block_storage.get_limits())
 
-        total_cores      = limits.absolute.total_cores
+        total_cores = limits.absolute.total_cores
         total_cores_used = limits.absolute.total_cores_used
-        instances        = limits.absolute.instances
-        instances_used   = limits.absolute.instances_used
-        total_ram        = limits.absolute.total_ram
-        total_ram_used   = limits.absolute.total_ram_used
+        instances = limits.absolute.instances
+        instances_used = limits.absolute.instances_used
+        total_ram = limits.absolute.total_ram
+        total_ram_used = limits.absolute.total_ram_used
 
+        #        pp.pprint ( limits.absolute )
 
-#        pp.pprint ( limits.absolute )
-        
-        res = {'total_cores'      : total_cores,
-               'total_cores_used' : total_cores_used,
-               'instances'        : instances,
-               'instances_used'   : instances_used,
-               'total_ram'        : total_ram,
-               'total_ram_used'   : total_ram_used }
+        res = {'total_cores': total_cores,
+               'total_cores_used': total_cores_used,
+               'instances': instances,
+               'instances_used': instances_used,
+               'total_ram': total_ram,
+               'total_ram_used': total_ram_used}
 
-
-
-        
         return res
 
     def get_resources_available(self):
@@ -395,15 +382,13 @@ class Openstack( object ):
           None
         """
         raw_res = self.get_resources()
-#        pp.pprint( raw_res)
+        #        pp.pprint( raw_res)
 
-        return {'cores'     : raw_res['total_cores'] - raw_res['total_cores_used'],
-                'instances' : raw_res['instances'] - raw_res['instances_used'],
-                'ram'       : raw_res['total_ram'] - raw_res['total_ram_used']}
-        
+        return {'cores': raw_res['total_cores'] - raw_res['total_cores_used'],
+                'instances': raw_res['instances'] - raw_res['instances_used'],
+                'ram': raw_res['total_ram'] - raw_res['total_ram_used']}
 
-
-    def get_images( self, active:bool=True, name=None ):
+    def get_images(self, active: bool = True, name=None):
         """ get the images currently available on the cloud
 
         Args:        
@@ -419,29 +404,26 @@ class Openstack( object ):
 
         images = []
         for image in self._connection.image.images():
-            if active and image.status!="active":
+            if active and image.status != "active":
                 continue
 
             if (name is not None and
                     (name.lower() not in image.name.lower() and
                      name.lower() not in image.id.lower())):
                 continue
-                
-            
-            image_info = { 'id': image.id,
-                           'min_disk': image.min_disk,
-                           'name': image.name,
-			   'tags': image.tags,
-			   'min_ram': image.min_ram,
-			   'status': image.status}
-                           
-            
-            images.append( image_info )
+
+            image_info = {'id': image.id,
+                          'min_disk': image.min_disk,
+                          'name': image.name,
+                          'tags': image.tags,
+                          'min_ram': image.min_ram,
+                          'status': image.status}
+
+            images.append(image_info)
 
         return images
 
-
-    def get_flavours( self ):
+    def get_flavours(self):
         """ get the flavours currently available on the cloud
 
         Only returns flavours that are active and public
@@ -462,27 +444,20 @@ class Openstack( object ):
             if flavour.is_public != True:
                 continue
 
-            
             if flavour.is_disabled != False:
                 continue
 
-            flavour_info = { 'id': flavour.id,
-                             'name': flavour.name,
-                             'ram': flavour.ram,
-                             'cpus': flavour.vcpus,
-                             'disk': flavour.disk }
-            
+            flavour_info = {'id': flavour.id,
+                            'name': flavour.name,
+                            'ram': flavour.ram,
+                            'cpus': flavour.vcpus,
+                            'disk': flavour.disk}
 
-            
-            
-            flavours.append( flavour_info )
+            flavours.append(flavour_info)
 
         return flavours
-    
 
-
-
-    def volume_create(self, size:int, name:str=None, **kwargs) -> str:
+    def volume_create(self, size: int, name: str = None, **kwargs) -> str:
         """ Create a volume
 
         Args:
@@ -497,13 +472,13 @@ class Openstack( object ):
 
         """
 
-        volume = self._connection.create_volume( size=size, name=name )
+        volume = self._connection.create_volume(size=size, name=name)
 
-        logger.info( "Created volume id {} with the size of {}GB".format( volume.id, size ))
-        
+        logger.info("Created volume id {} with the size of {}GB".format(volume.id, size))
+
         return volume.id
 
-    def volume_delete(self, id:str=None, wait:bool=True) -> None:
+    def volume_delete(self, id: str = None, wait: bool = True) -> None:
         """ deletes a volume
 
         Args:
@@ -519,24 +494,22 @@ class Openstack( object ):
 
         """
 
-        logger.debug("Trying to delete volume {}".format( id ))
+        logger.debug("Trying to delete volume {}".format(id))
 
-        if ( self._volume_exists( id ) == False ):
-            logger.debug("Volume {} does not exist, cannot delete it".format( id ))
+        if (self._volume_exists(id) == False):
+            logger.debug("Volume {} does not exist, cannot delete it".format(id))
             return
-        
-        
-        if ( id is not None):
-            self._connection.delete_volume( id )
-            logger.debug("Deleted volume id:{}".format( id ))
-            if ( wait ):
-                self._wait_for_volume_deletion( id )
+
+        if (id is not None):
+            self._connection.delete_volume(id)
+            logger.debug("Deleted volume id:{}".format(id))
+            if (wait):
+                self._wait_for_volume_deletion(id)
 
         else:
             raise RuntimeError("No id or name provided")
 
-
-    def _volume_exists(self, volume_id:str) -> bool:
+    def _volume_exists(self, volume_id: str) -> bool:
         """ Checks if a volume exists or not in the volume list
 
         Args:
@@ -550,14 +523,12 @@ class Openstack( object ):
         """
 
         for volume in self.volumes():
-#            print("{} ===== {}".format( volume['id'], volume_id))
-            if ( volume['id'] == volume_id ):
-                    return True
+            #            print("{} ===== {}".format( volume['id'], volume_id))
+            if (volume['id'] == volume_id):
+                return True
         return False
 
-        
-        
-    def _wait_for_volume_deletion(self, id:str, sleep_time:float=0.05, timeout:float=20.0):
+    def _wait_for_volume_deletion(self, id: str, sleep_time: float = 0.05, timeout: float = 20.0):
         """ hangs till the volume has been deleted.
 
         Args:
@@ -572,23 +543,20 @@ class Openstack( object ):
           RuntimeError if volume not deleted within the timeout time
         """
 
-        logger.debug("Waiting for volume {} being deleted".format( id ))
+        logger.debug("Waiting for volume {} being deleted".format(id))
 
-        
-        while( True ):
-            if ( self._volume_exists( id ) == False ):
-                logger.debug("Volume {} has been successfully deleted".format( id ))
+        while (True):
+            if (self._volume_exists(id) == False):
+                logger.debug("Volume {} has been successfully deleted".format(id))
                 return
 
-            time.sleep( sleep_time )
+            time.sleep(sleep_time)
 
             timeout -= sleep_time
 
-            if ( timeout < 0.0 ):
-                raise RuntimeError("Volume {} has not been deleted".format( id ))
-            
-            
-        
+            if (timeout < 0.0):
+                raise RuntimeError("Volume {} has not been deleted".format(id))
+
     def volumes(self):
         """ get volumes information, currently one volume can only be attached to one node.
 
@@ -603,30 +571,29 @@ class Openstack( object ):
         """
 
         volumes = []
-        for volume in self._connection.block_storage.volumes( details=True ):
-#            pp.pprint( volume )
+        for volume in self._connection.block_storage.volumes(details=True):
+            #            pp.pprint( volume )
 
-            volume_data = { 'id': volume.id,
-                            'name' : volume.name,
-                            'size': volume.size,
-                            'description': volume.description,
-                            'server_id': None,
-                            'device': None,
-                            'attachment_id': None,
-                            }
+            volume_data = {'id': volume.id,
+                           'name': volume.name,
+                           'size': volume.size,
+                           'description': volume.description,
+                           'server_id': None,
+                           'device': None,
+                           'attachment_id': None,
+                           }
 
             if volume.attachments != []:
-                attachment = volume.attachments[ 0 ]
-                volume_data[ 'server_id']     = attachment[ 'server_id' ]
-                volume_data[ 'device']        = attachment[ 'device' ]
-                volume_data[ 'attachment_id'] = attachment[ 'id' ]
-                
-            volumes.append( volume_data )
+                attachment = volume.attachments[0]
+                volume_data['server_id'] = attachment['server_id']
+                volume_data['device'] = attachment['device']
+                volume_data['attachment_id'] = attachment['id']
+
+            volumes.append(volume_data)
 
         return volumes
 
-            
-    def attach_volume( self, server_id:str, volume_id:str):
+    def attach_volume(self, server_id: str, volume_id: str):
         """ Attaches a volume to a server
 
         Args:
@@ -642,11 +609,10 @@ class Openstack( object ):
         """
 
         attachment = self._connection.compute.create_volume_attachment(server=server_id, volumeId=volume_id)
-#        pp.pprint( attachment )
+        #        pp.pprint( attachment )
         return attachment.device
-        
 
-    def _get_attachment_id(server_id:str, volume_id:str) -> str:
+    def _get_attachment_id(self, server_id: str, volume_id: str) -> str:
         """ get an attachment id for the connections between server_id and volume_id
 
         Args:
@@ -660,16 +626,14 @@ class Openstack( object ):
           None
         """
 
-
         for volume in self.volumes():
-            if ( volume['server_id'] == server_id and
-                 volume['volume_id'] == volume_id):
-                
+            if (volume['server_id'] == server_id and
+                    volume['volume_id'] == volume_id):
                 volume['attachment_id']
 
         return None
 
-    def _get_attachment_server_id(attachment_id:str) -> str:
+    def _get_attachment_server_id(self, attachment_id: str) -> str:
         """ get a server-id for an  attachment
 
         Args:
@@ -682,17 +646,13 @@ class Openstack( object ):
           None
         """
 
-
         for volume in self.volumes():
-            if ( volume['attachment_id'] == attachment_id):
-                
+            if (volume['attachment_id'] == attachment_id):
                 volume['server_id']
 
         return None
-    
-    
-    
-    def server_attached_to_volume( self, volume_id:str) -> str:
+
+    def server_attached_to_volume(self, volume_id: str) -> str:
         """ Find the server attached to a volume, if none returns None
 
         Args:
@@ -706,13 +666,12 @@ class Openstack( object ):
         """
 
         for volume in self.volumes():
-            if ( volume['id'] == volume_id ):
+            if (volume['id'] == volume_id):
                 return volume['server_id']
 
         return None
 
-
-    def volumes_attached_to_server( self, server_id:str) -> []:
+    def volumes_attached_to_server(self, server_id: str) -> []:
         """ Find the server attached to a volume, if none returns None
 
         Args:
@@ -726,9 +685,9 @@ class Openstack( object ):
         """
 
         volumes = []
-        
+
         for volume in self.volumes():
-            if ( volume['server_id'] == server_id ):
+            if (volume['server_id'] == server_id):
                 volumes.append(volume['id'])
 
         return volumes
@@ -746,17 +705,15 @@ class Openstack( object ):
           None
         """
 
-
         attachments = []
-        
+
         for volume in self.volumes():
-            if ( volume['server_id'] == server_id ):
+            if (volume['server_id'] == server_id):
                 attachments.append(volume['attachment_id'])
 
         return attachments
-    
-    
-    def detach_volume( self, attachment_id:str, server_id:str=None, volume_id:str=None) -> None:
+
+    def detach_volume(self, attachment_id: str, server_id: str = None, volume_id: str = None) -> None:
         """ Detaches a volume to a server
 
         Args:
@@ -772,27 +729,24 @@ class Openstack( object ):
 
         """
 
-        
-        if ( attachment_id is None ):
-            if ( server_id is not None and volume_id is not None):
-                attachment_id = self._get_attachment_id( server_id, volume_id)
-                if ( attachment_id is None ):
-                    raise RuntimeError( "Could not find attachment if for server:{}, volume:{}".format(server_id, volume_id))
+        if (attachment_id is None):
+            if (server_id is not None and volume_id is not None):
+                attachment_id = self._get_attachment_id(server_id, volume_id)
+                if (attachment_id is None):
+                    raise RuntimeError(
+                        "Could not find attachment if for server:{}, volume:{}".format(server_id, volume_id))
             else:
-                raise RuntimeError( "Need to provide either a attachment-id or server & volume id")
-                
+                raise RuntimeError("Need to provide either a attachment-id or server & volume id")
 
         # Function needs a server-id to detach volume, as the user didnt provide one, get it
-        if ( server_id is None ):
-            server_id = self._get_attachment_server_id( attachment_id )
-            if ( server_id is None ):
-                raise RuntimeError( "Could not find server for attachment:{}".format(attachment_id))
-        
-        attachment = self._connection.compute.delete_volume_attachment(attachment_id, server=server_id)
-        
-    
+        if (server_id is None):
+            server_id = self._get_attachment_server_id(attachment_id)
+            if (server_id is None):
+                raise RuntimeError("Could not find server for attachment:{}".format(attachment_id))
 
-    def detach_volumes_from_server(self, id ) -> int:
+        attachment = self._connection.compute.delete_volume_attachment(attachment_id, server=server_id)
+
+    def detach_volumes_from_server(self, id) -> int:
         """ detaches all volumes attached to a node
 
         args:
@@ -806,15 +760,13 @@ class Openstack( object ):
         """
 
         volumes_detached = 0
-        
-        for attachment_id in self.server_attachments( id ):
-            self.detach_volume( attachment_id, server_id=id)
-            time.sleep( 1 )
-            volumes_detached +=1
+
+        for attachment_id in self.server_attachments(id):
+            self.detach_volume(attachment_id, server_id=id)
+            time.sleep(1)
+            volumes_detached += 1
 
         return volumes_detached;
-        
-
 
     def security_groups(self):
         """ fetches the security groups from a openstack 
@@ -829,42 +781,32 @@ class Openstack( object ):
           None
         """
 
-
         security_groups = self._connection.network.security_groups()
 
         res = {}
-        
+
         for security_group in security_groups:
-#            res[ security_group.id ] = {'name' : security_group.name,
-#                                        'rules': []}
+            #            res[ security_group.id ] = {'name' : security_group.name,
+            #                                        'rules': []}
 
-            res[ security_group.name ] = {'id' : security_group.id,
-                                          'rules': []}
+            res[security_group.name] = {'id': security_group.id,
+                                        'rules': []}
 
-
-
-            
             for rule in security_group.security_group_rules:
-
                 details = {}
-                
 
-                
-                details[ 'direction'        ] =  rule[ 'direction' ]
-                details[ 'protocol'         ] =  rule[ 'protocol' ]
-                details[ 'ports'            ] = (rule[ 'port_range_min' ], rule[ 'port_range_max' ])
-                details[ 'remote_group_id'  ] =  rule[ 'remote_group_id' ]
-                details[ 'remote_ip_range'  ] =  rule[ 'remote_ip_prefix' ]
-                details[ 'ethernet_version' ] =  rule[ 'ethertype' ]
+                details['direction'] = rule['direction']
+                details['protocol'] = rule['protocol']
+                details['ports'] = (rule['port_range_min'], rule['port_range_max'])
+                details['remote_group_id'] = rule['remote_group_id']
+                details['remote_ip_range'] = rule['remote_ip_prefix']
+                details['ethernet_version'] = rule['ethertype']
 
-                res[ security_group.name ]['rules'].append( details )
+                res[security_group.name]['rules'].append(details)
 
-                
         return res
 
-
-    
-    def security_group_create(self, name:str):
+    def security_group_create(self, name: str):
         """ creates a security group for a given connectiona
     
         Args:
@@ -877,18 +819,17 @@ class Openstack( object ):
           RuntimeError if a groupd with this name already exists.
         """
 
-
         groups = self.security_groups()
 
         if name in groups:
-            raise RuntimeError("Openstack security group {} already exist".format( name ))
-        
-        
-        security_group_id = self._connection.network.create_security_group( name=name)
+            raise RuntimeError("Openstack security group {} already exist".format(name))
+
+        security_group_id = self._connection.network.create_security_group(name=name)
 
         return security_group_id
 
-    def security_group_add_rule(self, id:str, direction:str, port:int, protocol:str, remote_group_id:str=None, remote_ip_range:str=None ):
+    def security_group_add_rule(self, id: str, direction: str, port: int, protocol: str, remote_group_id: str = None,
+                                remote_ip_range: str = None):
         """ adds a firewall rule for a security group 
     
         Args:
@@ -914,9 +855,8 @@ class Openstack( object ):
               port,
               protocol,
               remote_group_id,
-              remote_ip_range,"\n")
+              remote_ip_range, "\n")
 
-        
         self._connection.network.create_security_group_rule(security_group_id=id,
                                                             direction=direction,
                                                             port_range_min=port,
@@ -925,11 +865,8 @@ class Openstack( object ):
                                                             remote_group_id=remote_group_id,
                                                             remote_ip_prefix=remote_ip_range)
 
-
-
-
-
-    def firewall_add_incoming_rule(self, name:str, port:int, protocol:str, remote_group:str=None, remote_ip_range:str=None ):
+    def firewall_add_incoming_rule(self, name: str, port: int, protocol: str, remote_group: str = None,
+                                   remote_ip_range: str = None):
         """ adds an incoming firewall rule for a security group 
     
         Args:
@@ -950,29 +887,26 @@ class Openstack( object ):
         groups = self.security_groups()
 
         if name not in groups:
-            raise RuntimeError("Unknown security group {} tp update".format( name ))
+            raise RuntimeError("Unknown security group {} tp update".format(name))
 
         remote_group_id = None
         if remote_group is not None:
             if remote_group not in groups:
-                raise RuntimeError("Unknown remote security group '{}'".format( name ))
+                raise RuntimeError("Unknown remote security group '{}'".format(name))
             else:
                 remote_group_id = groups[remote_group]['id']
 
-        if 'rules' in groups[ name ]:
-            for rule in groups[ name ][ 'rules' ]:
-                
-                if ( rule['ports']      == (port,port) and
-                     rule['protocol']  == protocol and
-                     rule['direction']  == 'ingress' and 
-                     rule['remote_group_id']  == remote_group_id and
-                     rule['remote_ip_range']  == remote_ip_range):
-                    
+        if 'rules' in groups[name]:
+            for rule in groups[name]['rules']:
+
+                if (rule['ports'] == (port, port) and
+                        rule['protocol'] == protocol and
+                        rule['direction'] == 'ingress' and
+                        rule['remote_group_id'] == remote_group_id and
+                        rule['remote_ip_range'] == remote_ip_range):
                     logger.debug('firewall rule already exists, skipping it')
                     return
-                 
-            
-                
+
         self.security_group_add_rule(id=groups[name]['id'],
                                      direction='ingress',
                                      port=port,
@@ -980,8 +914,7 @@ class Openstack( object ):
                                      remote_group_id=remote_group_id,
                                      remote_ip_range=remote_ip_range)
 
-
-    def firewall_add_incoming_rules(self, name:str, rules:list ):
+    def firewall_add_incoming_rules(self, name: str, rules: list):
         """ adds an incoming firewall rule for a security group 
     
         Args:
@@ -1001,11 +934,9 @@ class Openstack( object ):
         """
 
         for rule in rules:
-            self.firewall_add_incoming_rule( name=name, **rule )
+            self.firewall_add_incoming_rule(name=name, **rule)
 
-
-
-    def upload_key(self, public_key:str, name:str='ehos'):
+    def upload_key(self, public_key: str, name: str = 'ehos'):
         """ Uploads a public key to the openstack server
 
         Args:
@@ -1019,18 +950,15 @@ class Openstack( object ):
 
         """
 
-
-
         for keypair in self.get_keys():
-            if ( keypair['name' ] == name ):
-                logger.debug( "Key already exist in cloud, skipping it")
+            if (keypair['name'] == name):
+                logger.debug("Key already exist in cloud, skipping it")
                 return
 
         pub_key = open(os.path.expanduser(public_key)).read()
-            
+
         self._connection.compute.create_keypair(name=name, public_key=pub_key)
 
-                
     def get_keys(self):
         """ Get list of keys, mainly used to ensure a key name is not already used.
 
@@ -1046,19 +974,14 @@ class Openstack( object ):
  
         """
 
-
         keys = []
 
         for entry in self._connection.compute.keypairs():
             key = {}
-            key['name']        =  entry.name
-            key['public_key']  =  entry.public_key
-            key['fingerprint'] =  entry.fingerprint
+            key['name'] = entry.name
+            key['public_key'] = entry.public_key
+            key['fingerprint'] = entry.fingerprint
 
-            
-            keys.append( key )
+            keys.append(key)
 
         return keys
-
-        
-

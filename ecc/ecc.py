@@ -14,10 +14,13 @@ pp = pprint.PrettyPrinter(indent=4)
 import random
 
 from munch import Munch
+import kbr.log_utils as logger
 
 import ecc.openstack_class as openstack_class
 import ecc.slurm_utils as slurm_utils
 import ecc.utils as ecc_utils
+import ecc.ansible_utils as ansible_utils
+import ecc.cloudflare_utils as cloudflare_utils
 
 # Not sure if this is still needed.
 import logging
@@ -59,7 +62,7 @@ def servers(filter:str=None):
 
 
 def update_nodes_status():
-    vnodes = servers(config.ecc.nodes.name_regex)
+    vnodes = servers(config.ecc.name_regex)
     snodes = slurm_utils.nodes()
 
     global nodes
@@ -172,178 +175,90 @@ def delete_idle_nodes(instances, nodes, nr:int=1, max_heard_from_time:int=300):
         else:
             logger.debug("Cannot kill node {} it is {}/{}".format( node_name, node['node_state'],node['vm_state'] ))
 
+    return
 
+def delete_node(ids:str):
+    # wrapper for the function below
+    return delete_nodes( ids )
+
+
+def delete_nodes(ids:[]):
+
+    if not isinstance( ids, list):
+        ids = [ids]
+
+    for id in ids:
+        logger.info("deleting node {}".format( id ))
+        vm = openstack.server( id )
+
+        logger.info('deleting DNS entry...')
+        cloudflare_utils.purge_name( vm['name'])
+        logger.info('deleting VM...')
+        openstack.server_delete( id )
+
+    logger.info('running playbook')
+    ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
 
     return
 
 
 
 
-def create_execute_nodes(instances, config:Munch, execute_config_file:str=None, nr:int=1):
-    """ Create a number of execute nodes
+def create_node(cloud_init_file:str=None):
 
-    Args:
-       config: config settings
-       config_file: config file for node
-       nr: nr of nodes to spin up (default 1)
+    node_id = next_id(names=openstack.server_names())
+    node_name = config.ecc.name_template.format( node_id)
+    print(f"creating node with name {node_name}")
 
-    Returns:
-      None
-    
-    Raises:
-      RuntimeError if unknown node-allocation method
-      None
-    """
+#    resources = openstack.get_resources_available()
 
-    nr = 1
+    try:
 
-    node_names = []
-
-
-    for i in range(0, nr ):
-
-        cloud_name = None
-        clouds = list(instances.clouds().keys())
-
-        clouds_usable = []
-        
-        for cloud_name in clouds:
-            cloud = instances.get_cloud( cloud_name )
-            resources = cloud.get_resources_available()
-            if ( resources['ram']       > config.daemon.min_ram*1024 and
-                 resources['cores']     > config.daemon.min_cores and
-                 resources['instances'] > config.daemon.min_instances):
-                clouds_usable.append( cloud_name )
-
-        clouds = clouds_usable
-                
-        if ( clouds == []):
-            logger.warn('No resources available to make a new node')
-            return
-        
-        # for round-robin
-        ### find the next cloud name
-        if 'node_allocation' not in config.daemon:
-            config.daemon['node_allocation'] = 'round-robin'
-
-        if ( config.daemon.node_allocation == 'round-robin'):
-
-            nodes_created = len( instances.get_nodes())
-
-            if nodes_created == 0:
-                cloud_name = clouds[ 0 ]
-            else:
-                cloud_name = clouds[ nodes_created%len( clouds )]
-            
-            node_name = make_node_name(config.ehos.project_prefix, "execute")
-
-        elif ( config.ehos.deamon.node_allocation == 'random'):
-            cloud_name = random.choice( clouds )
-        elif (  config.ehos.deamon.node_allocation == 'fill first'):
-            cloud_name = clouds[ 0 ]
-
-        else:
-            logger.critical("Unknown node allocation method ({})".format( config.daemon.node_allocation ))
-            raise RuntimeError("Unknown node allocation method ({})".format( config.daemon.node_allocation ))
-
-
-        cloud = instances.get_cloud( cloud_name )
-
-        logger.debug( "Using image {}".format( config.clouds[ cloud_name ].image ))
-        
-        try:
-            config.ehos.image= config.clouds[ cloud_name ].image
-            
-            node_id = cloud.server_create( name=node_name,
-                                           userdata_file=execute_config_file,
-                                           **config.ehos )
-
-            if ( 'scratch_size' in config.ehos and
-                 config.ehos.scratch_size is not None and
-                 config.ehos.scratch_size != 'None'):
-
-                try:
-                    volume_id = cloud.volume_create(size=config.ehos.scratch_size, name=node_name)
-                    cloud.attach_volume( node_id, volume_id=volume_id)
-                except:
-                    logger.warning("Could not create execute server, not enough disk available, deleting the instance.")
-                    cloud.server_delete( node_id )
-
-
-            instances.add_node( id=node_id, name=node_name, cloud=cloud_name, node_state='node_starting', vm_state='vm_booting')
-            logger.debug("Execute server {}/{} is vm_booting".format( node_id, node_name))
-            node_names.append(node_name)
-
-        except Exception as e:
-            logger.warning("Could not create execute server")
-            logger.debug("Error: {}".format(e))
-
-                            
-
-    return node_names
+        node_id = openstack.server_create( name=node_name,
+                                       userdata_file=cloud_init_file,
+                                       **config.ecc )
 
 
 
+        logger.debug("Execute server {}/{} is vm_booting".format( node_id, node_name))
+
+    except Exception as e:
+        logger.warning("Could not create execute server")
+        logger.debug("Error: {}".format(e))
+        return
 
 
+    # This is a blocking call, so will hang here till the server is online.
+    openstack.wait_for_log_entry(node_id)
+    node_ips = openstack.server_ip(node_id)
 
-def create_master_node(instances, config:Munch, master_file:str):
-    """ Create a number of images to be used later to create nodes
+    try:
+        cloudflare_utils.add_record('A', node_name, node_ips[0], 1000)
+    except:
+        print(f"failed to add dns entry: 'add_record('A', {node_name}, {node_ips[0]}, 1000)'")
 
-    Args:
-       config: config settings
-       master_file: config file for master node
+    try:
+        ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
+    except:
+        print(f"failed to run playbook: 'run_playbook({config.ecc.ansible_cmd}, host={node_ips[0]}, cwd={config.ecc.ansible_dir})'")
 
+    global nodes
+    nodes[node_name] = {}
+    nodes[node_name]['vm_id'] = node_id
+    nodes[node_name]['vm_state'] = 'booting'
+    nodes[node_name] = node_ips
 
-    Returns:
-      the master_id (uuid)
-    
-    Raises:
-      RuntimeError if unknown node-allocation method
-    """
+#    sys.exit()
 
-    clouds = list(instances.clouds().keys())
-
-    if len (clouds ) == 1:
-        logger.debug( "only one cloud configured, will use that for the master node regardless of configuration")
-        config.daemon.master_cloud = clouds[ 0 ]
-        
-    if 'master_cloud' not in config.daemon or config.daemon == 'None':
-        logger.critical( "Cloud instance for hosting the master node is not specified in the config file (daemon:master_cloud)")
-        sys.exit( 2 )
-    
-    cloud_name = config.daemon.master_cloud
-
-    if ( cloud_name not in clouds):
-        print( "Unknown cloud instance {}, it is not found in the config file".format( cloud_name ))
-
-    cloud = instances.get_cloud( cloud_name )
-
-    master_name = make_node_name(config.ehos.project_prefix, "master")
-
-    config.ehos.image = config.clouds[ cloud_name ].image
-    
-    master_id = cloud.server_create( name=master_name,
-                                     userdata_file=master_file,
-                                     **config.ehos )
-
-        
-    logger.info("Created master node, waiting for it to come online. This can take upto 15 minutes")
-
-    
-    # Wait for the server to come online and everything have been configured.    
-    cloud.wait_for_log_entry(master_id, "The EHOS vm is up after ", timeout=1300)
-    logger.info("Master node is now online")
-
-    logger.info( "Master IP addresse is {}".format( cloud.server_ip( master_id )))
-    
-
-    return master_id, cloud.server_ip( master_id )
+    return node_name
 
 
-def next_id(names:str, regex:str=None) -> int:
+def next_id(names, regex:str=None) -> int:
+
+    print(f"Node names {names}")
+
     if regex is None:
-        regex = config.ecc.nodes.name_regex
+        regex = config.ecc.name_regex
     regex = re.compile(regex)
 
     ids = []
@@ -352,13 +267,61 @@ def next_id(names:str, regex:str=None) -> int:
         if g:
             ids.append( int(g.group(1)))
 
+#    print( ids )
+
     if ids == []:
         return 1
 
     ids = sorted(ids)
+
+    if ids[0] > 1:
+        return ids[0] - 1
+
+
     for i in range(0, len(ids) - 1):
         if ids[ i ] + 1 < ids[ i + 1]:
             return ids[ i ] + 1
 
-    return ids[-1 ] + 1
+    return ids[ -1 ] + 1
+
+def write_config_file(filename:str='ecc.yml') -> None:
+    if os.path.isfile( args.create_config ):
+        raise RuntimeError('Config file already exists, please rename before creating a new one')
+
+    config = '''
+openstack:
+    auth_url: <AUTH URL>
+    password: <PASSWORD>
+    project_domain_name: <PROJECT DOMAIN>
+    project_name: <PROJECT NAME>
+    region_name: <REGION>
+    user_domain_name: <USER DOMAIN>
+    username: <USER EMAIL>
+
+ecc:
+    log: ecc.log
+    nodes_max: 6
+    nodes_min: 1
+    nodes_spare: 1
+    sleep: 30
+
+    flavor: m1.medium
+    image: GOLD CentOS 7
+    key: <SSHKEY>
+    network: dualStack
+    security_groups: slurm-node
+    name_template: "ecc{}.usegalaxy.no"
+    cloud_init: <PATH>/ecc_node.yaml
+    ansible_dir: <PATH, eg: /usr/local/ansible/infrastructure-playbook/env/test>
+    ansible_cmd: "<CMD, EG: ./venv/bin/ansible-playbook -i ecc_nodes.py slurm.yml"
+
+    cloudflare_apikey: <API KEY>
+    cloudflare_email: <EMAIL>'''
+
+
+    with open(filename, 'w') as outfile:
+        outfile.write(config)
+        outfile.close()
+
+    return None
 

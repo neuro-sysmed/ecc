@@ -12,11 +12,11 @@ DEFAULT_ZONE = None
 def init(api_key:str, email:str, zone:str='usegalaxy.no'):
     global DEFAULT_ZONE, cf
     DEFAULT_ZONE = zone
-    cf = CloudFlare.CloudFlare(email=args.api_email, token=args.api_key)
+    cf = CloudFlare.CloudFlare(email=email, token=api_key)
 
 
 
-def list_records( args ):
+def list_records( ):
 
     zone_name = DEFAULT_ZONE
     
@@ -56,16 +56,11 @@ def list_records( args ):
     return table
 
 
-def delete_record( args ) -> None:
+def delete_record( dns_record_id:str ) -> None:
 
     zone_name = DEFAULT_ZONE
 
-    if len( args.command):
-        dns_record_id = args.command.pop( 0 )
-    else:
-        print( 'delete requires a dns-record-id')
-        exit(-1)
-    
+
     zone_info = cf.zones.get(params={'name': zone_name})[0]
     zone_id = zone_info['id']
     print( zone_id )
@@ -73,20 +68,16 @@ def delete_record( args ) -> None:
     r = cf.zones.dns_records.delete(zone_id, dns_record_id)
     return r
 
-def add_record( args ) -> None:
+def add_record( r_type, r_name, r_value, r_ttl:int=1000 ) -> None:
 
 
     zone_name = DEFAULT_ZONE
-    
-    if len( args.command) == 4 :
-        r_type, r_name, r_value, r_ttl  = args.command
-    else:
-        print( 'add requires: type, name, value and ttl')
-        exit(-1)
-    
+    print(f"ZN :: {zone_name}")
+    print( cf.zones.get(params={'name': zone_name}) )
+
     zone_info = cf.zones.get(params={'name': zone_name})[0]
     zone_id = zone_info['id']
-    data = {"type":r_type,"name":r_name,"content":r_value,"ttl":120}
+    data = {"type": r_type, "name": r_name, "content": r_value, "ttl": r_ttl}
     if r_type == "MX":
         data["priority"] = 10
     try:
@@ -96,4 +87,9 @@ def add_record( args ) -> None:
         print(e)
 
     return r
-    
+
+
+def purge_name(hostname):
+    for entry in list_records():
+        if entry['name'] == hostname:
+            delete_record(entry['id'])

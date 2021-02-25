@@ -55,8 +55,7 @@ def add_vms(commands):
         print(f"{program_name} create [number, default=1]")
 
 
-    for _ in range(0, int(count)):
-        ecc.create_node(cloud_init_file=config.ecc.cloud_init)
+    ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=int(count))
 
 def delete_vms(ids:[]):
 
@@ -118,10 +117,10 @@ def pool_size(commands):
             nodes_to_cull.append( n['id'])
             if len( nodes_to_cull) == len(nodes) - size:
                 break
-        delete_vms( size - len(nodes) )
+        delete_vms( nodes_to_cull )
     elif len(nodes) < size:
         logger.info(f'We are a few nodes short, will create {size - len(nodes)}')
-        add_vms( size - len(nodes) )
+        add_vms( [size - len(nodes)] )
     else:
         logger.info('Nothing to do, we have the perfect number of nodes')
 

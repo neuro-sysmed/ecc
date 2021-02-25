@@ -204,51 +204,46 @@ def delete_nodes(ids:[]):
 
 
 
-def create_node(cloud_init_file:str=None):
+def create_nodes(cloud_init_file:str=None, count=1):
 
-    node_id = next_id(names=openstack.server_names())
-    node_name = config.ecc.name_template.format( node_id)
-    print(f"creating node with name {node_name}")
 
 #    resources = openstack.get_resources_available()
+    global nodes
 
     try:
+        for _ in range(0, count):
+            node_id = next_id(names=openstack.server_names())
+            node_name = config.ecc.name_template.format( node_id)
+            print(f"creating node with name {node_name}")
 
-        node_id = openstack.server_create( name=node_name,
-                                       userdata_file=cloud_init_file,
-                                       **config.ecc )
+            node_id = openstack.server_create( name=node_name,
+                                           userdata_file=cloud_init_file,
+                                           **config.ecc )
 
+            logger.debug("Execute server {}/{} is vm_booting".format( node_id, node_name))
+            # This is a blocking call, so will hang here till the server is online.
+            openstack.wait_for_log_entry(node_id)
+            node_ips = openstack.server_ip(node_id)
+            try:
+                cloudflare_utils.add_record('A', node_name, node_ips[0], 1000)
+            except:
+                print(f"failed to add dns entry: 'add_record('A', {node_name}, {node_ips[0]}, 1000)'")
 
+            nodes[node_name] = {}
+            nodes[node_name]['vm_id'] = node_id
+            nodes[node_name]['vm_state'] = 'booting'
+            nodes[node_name] = node_ips
 
-        logger.debug("Execute server {}/{} is vm_booting".format( node_id, node_name))
 
     except Exception as e:
         logger.warning("Could not create execute server")
         logger.debug("Error: {}".format(e))
-        return
-
-
-    # This is a blocking call, so will hang here till the server is online.
-    openstack.wait_for_log_entry(node_id)
-    node_ips = openstack.server_ip(node_id)
-
-    try:
-        cloudflare_utils.add_record('A', node_name, node_ips[0], 1000)
-    except:
-        print(f"failed to add dns entry: 'add_record('A', {node_name}, {node_ips[0]}, 1000)'")
+#        return
 
     try:
         ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
     except:
         print(f"failed to run playbook: 'run_playbook({config.ecc.ansible_cmd}, host={node_ips[0]}, cwd={config.ecc.ansible_dir})'")
-
-    global nodes
-    nodes[node_name] = {}
-    nodes[node_name]['vm_id'] = node_id
-    nodes[node_name]['vm_state'] = 'booting'
-    nodes[node_name] = node_ips
-
-#    sys.exit()
 
     return node_name
 

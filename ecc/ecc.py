@@ -70,7 +70,10 @@ def update_nodes_status():
         if vnode['name'] not in nodes:
             nodes[vnode['name']] = {}
             nodes[vnode['name']]['vm_id'] = vnode['id']
+            nodes[vnode['name']]['name'] = vnode['name']
+            nodes[vnode['name']]['ip'] = vnode.get('ip', [])
             nodes[vnode['name']]['vm_state'] = vnode['status']
+            nodes[vnode['name']]['slurm_state'] = 'na'
             nodes[vnode['name']]['timestamp'] = ecc_utils.timestamp()
 
         elif 'vm_state' not in nodes[vnode['name']] or nodes[vnode['name']]['vm_state'] != vnode['status']:
@@ -81,6 +84,10 @@ def update_nodes_status():
     for snode in snodes:
         if snode['name'] not in nodes:
             nodes[snode['name']] = {}
+            nodes[snode['name']]['vm_id'] = None
+            nodes[snode['name']]['name'] = snode['name']
+            nodes[snode['name']]['ip'] = []
+            nodes[snode['name']]['vm_state'] = None
             nodes[snode['name']]['slurm_state'] = snode['state']
             nodes[snode['name']]['timestamp'] = ecc_utils.timestamp()
 
@@ -89,7 +96,16 @@ def update_nodes_status():
             nodes[snode['name']]['timestamp'] = ecc_utils.timestamp()
 
 
-    pp.pprint(nodes)
+#    pp.pprint(nodes)
+
+
+def nodes_info(update:bool=True):
+    if update:
+        update_nodes_status()
+
+    global nodes
+
+    return nodes
 
 
 def nodes_idle(update:bool=False):

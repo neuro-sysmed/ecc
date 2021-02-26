@@ -150,7 +150,7 @@ class Openstack(object):
 
         for server in self._connection.compute.servers():
             ip = self.server_ip(server.id)
-            servers.append({'id': server.id, 'name': server.name.lower(), 'status': server.status.lower(), 'ip': ip})
+            servers.append({'id': server.id, 'name': server.name.lower(), 'ip': ip, 'status': server.status.lower()})
 
         logger.debug("Servers: \n{}".format(pp.pformat(servers)))
         return servers

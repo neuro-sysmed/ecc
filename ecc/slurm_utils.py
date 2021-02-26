@@ -4,6 +4,23 @@ import kbr.run_utils as run_utils
 
 
 
+
+def available() -> bool:
+
+
+
+    try:
+        run = run_utils.launch_cmd( "sinfo" )
+        if run.p_status:
+            return False
+
+        return True
+    except:
+        return False
+
+
+
+
 def jobs():
     #"%.18i %.9P %.8j %.8u %.2t %.10M %.6D %R"
     #JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
@@ -61,16 +78,29 @@ def nodes():
 
     run = run_utils.launch_cmd( cmd )
 
-    run = " usegalaxy_production*    up   infinite      2    mix nrec1.usegalaxy.no,slurm.usegalaxy.no\n  usegalaxy_production*    up   infinite      1   alloc nrec2.usegalaxy.no"
-    nodes = []
+#    run = " usegalaxy_production*    up   infinite      2    mix nrec1.usegalaxy.no,slurm.usegalaxy.no\n  usegalaxy_production*    up   infinite      1   alloc nrec2.usegalaxy.no"
 
+    run = run.stdout
+    if run == b'':
+        return []
+
+    run = str(run)
+
+    nodes = []
     for line in run.split("\n"):
         fields = line.split()
-#        print(fields)
         for node in fields[5].split(","):
             nodes.append( {'name':node, 'avail': fields[2], "state": fields[4]})
 
     return nodes
+
+
+def node_names() -> []:
+    names = []
+    for node in nodes():
+        names.append(node['name'])
+
+    return names
 
 
 def nodes_idle():
@@ -140,6 +170,20 @@ def free_resources():
 def add_cloud_node(name, ip_address):
     cmd = f"scontrol update nodename={name} nodeaddr={ip_address} nodehostname={name}"
     run = run_utils.launch_cmd( cmd )
+
+
+def update_node_state(name, state:str='idle'):
+    cmd = f"scontrol update nodename={name} state={state}"
+    run = run_utils.launch_cmd( cmd )
+
+def set_node_down(name:str):
+    update_node_state(name, 'down')
+
+def set_node_drain(name:str):
+    update_node_state(name, 'draining')
+
+def set_node_resume(name:str):
+    update_node_state(name, 'resume')
 
 
 def suspend_node(name):

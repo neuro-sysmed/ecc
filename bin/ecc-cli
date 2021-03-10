@@ -15,6 +15,7 @@ import kbr.version_utils as version_utils
 import kbr.args_utils as args_utils
 import kbr.string_utils as string_utils
 import kbr.type_utils as type_utils
+import kbr.file_utils as file_utils
 
 sys.path.append(".")
 import ecc
@@ -28,15 +29,57 @@ program_name = 'ecc-cli'
 
 def init(args):
     global config
-    config = config_utils.readin_config_file(args.config)
+    if args.config:
+        config = config_utils.readin_config_file(args.config)
+        logger.init(name=program_name, log_file=config.ecc.get('logfile', None))
+        logger.set_log_level(args.verbose)
+        logger.info(f'{program_name} (v:{version})')
+        config.ecc.name_regex = config.ecc.name_template.format("(\d+)")
+        ecc.set_config(config)
+        ecc.openstack_connect(config.openstack)
+        cloudflare_utils.init(config.ecc.cloudflare_apikey, config.ecc.cloudflare_email)
+    else:
+        logger.init(name=program_name)
+        logger.set_log_level(args.verbose)
+        logger.info(f'{program_name} (v:{version})')
 
-    logger.init(name=program_name, log_file=config.ecc.get('logfile', None))
-    logger.set_log_level(args.verbose)
-    logger.info(f'{program_name} (v:{version})')
-    config.ecc.name_regex = config.ecc.name_template.format("(\d+)")
-    ecc.set_config(config)
-    ecc.openstack_connect(config.openstack)
-    cloudflare_utils.init(config.ecc.cloudflare_apikey, config.ecc.cloudflare_email)
+
+
+
+def write_config_file():
+    content = ''' #config template file for nrec
+openstack:
+    auth_url: https://api.uh-iaas.no:5000/v3
+    password: <PASSWORD>
+    project_domain_name: dataporten
+    project_name: elixir-nrec-prod-backend
+    region_name: bgo
+    user_domain_name: dataporten
+    username: <USERNAME>
+
+ecc:
+    log: ecc.log
+    nodes_max: 6
+    nodes_min: 1
+    nodes_spare: 1
+    sleep: 30
+
+    flavor: m1.large
+    image: GOLD CentOS 7
+    key: <SSH KEY NAME>
+    network: dualStack
+    security_groups: slurm-node
+    name_template: "ecc{}.usegalaxy.no"
+    cloud_init: <CLOUD INIT FILE>
+    ansible_dir: <ANSIBLE DIR /.../infrastructure-playbook/env/test>
+    ansible_cmd: <EG: "../../venv/bin/ansible-playbook -i /home/brugger/projects/usegalaxy/ecc/bin/ecc_nodes.py slurm.yml -e'ansible_user=centos'" >
+
+    cloudflare_apikey: <API_KEY>
+    cloudflare_email: dnsadmin@ii.uib.no
+'''
+    file_utils.write( "ecc.yaml", content)
+
+
 
 
 def add_vms(commands):
@@ -123,13 +166,13 @@ def resize(commands):
 
 
 def main():
-    commands = ['add', 'delete', 'list', 'size', 'run-playbook', 'help']
+    commands = ['add', 'delete', 'list', 'size', 'run-playbook', 'init', 'help']
 
     parser = argparse.ArgumentParser(description=f'nga_cli: command line tool for the NGA ({version})')
 
     parser.add_argument('-c', '--config', help="NGA config file, or set env NGA_CONF",
                         default=args_utils.get_env_var('ECC_CONF'))
-    parser.add_argument('-v', '--verbose', default=4, action="count", help="Increase the verbosity of logging output")
+    parser.add_argument('-v', '--verbose', default=3, action="count", help="Increase the verbosity of logging output")
     parser.add_argument('command', nargs='*', help="{}".format(",".join(commands)))
 
     args = parser.parse_args()
@@ -140,9 +183,6 @@ def main():
     #    ecc.update_nodes_status()
     #    sys.exit()
 
-    if args.config is None:
-        parser.print_usage()
-        sys.exit(1)
 
     global verbose
     verbose = args.verbose
@@ -165,6 +205,9 @@ def main():
         sys.exit()
     elif command == 'run-playbook':
         ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
+        sys.exit()
+    elif command == 'init':
+        write_config_file()
         sys.exit()
     else:
         print("The tool support the following commands: {}\n".format(string_utils.comma_sep(commands)))

@@ -148,7 +148,7 @@ def delete_idle_nodes(count:int=1):
             nodes_to_cull.append(n['vm_id'])
 
 
-    delete_nodes( nodes_to_cull[0:nr_of_nodes_to_delete] )
+    delete_nodes( nodes_to_cull[0:count] )
     return
 
 

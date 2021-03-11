@@ -136,62 +136,21 @@ def nodes_total(update:bool=False):
     return count
 
 
-def delete_idle_nodes(instances, nodes, nr:int=1, max_heard_from_time:int=300):
+def delete_idle_nodes(count:int=1):
     """ Delete idle nodes, by default one node is vm_deleted
-
-    Args:
-      nr: nr of nodes to delete (if possible)
-      max_heard_from_time: if we have not heard from a node this long, we expect it is dead
-
-    Returns:
-      None
-
-    Raises:
-      None
     """
 
-    # Subtract the ones that are currently vm_stopping
-    nr -= len( instances.get_nodes( vm_state=['vm_stopping']))
 
-    # We have already tagged the number of nodes to be vm_deleted so be
-    # conservative and see if we still need to do this later on
-    if ( nr <= 0 ):
-        logger.debug( 'A suitable amount of nodes are already being killed')
-        return
-
-    # loop through the nodes that are deletable
-    for node_name in nodes:
-
-        node = instances.find( name = node_name )
-        if node is None:
-            continue
-
-#        print( node )
-        if ( node[ 'node_state' ] == 'node_idle' and node['vm_state'] in ['vm_active', 'vm_booting']):
-            logger.debug("Killing node {}".format( node_name ))
+    nodes = nodes_info().values()
+    nodes_to_cull = []
+    for n in nodes:
+        if n['slurm_state'] == 'idle':
+            nodes_to_cull.append(n['vm_id'])
 
 
-            cloud = instances.get_cloud( node['cloud'])
-
-            volumes = cloud.volumes_attached_to_server(node['id'])
-            cloud.detach_volumes_from_server(node['id'])
-
-            for volume in volumes:
-
-                cloud.volume_delete( volume )
-
-            cloud.server_delete( node['id'] )
-
-            instances.set_vm_state(node['id'], 'vm_stopping')
-            instances.set_node_state( node['id'], 'node_retiring')
-
-            nr -= 1
-            if ( nr <= 0 ):
-                return
-        else:
-            logger.debug("Cannot kill node {} it is {}/{}".format( node_name, node['node_state'],node['vm_state'] ))
-
+    delete_vms( nodes_to_cull[0:nr_of_nodes_to_delete] )
     return
+
 
 def delete_node(ids:str):
     # wrapper for the function below

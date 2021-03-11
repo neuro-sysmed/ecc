@@ -79,14 +79,7 @@ def run_daemon() -> None:
 
             logger.info("Deleting {} idle nodes... (1)".format(nr_of_nodes_to_delete))
 
-            nodes = ecc.nodes_info().values()
-            nodes_to_cull = []
-            for n in nodes:
-                if n['slurm_state'] == 'idle':
-                    nodes_to_cull.append(n['vm_id'])
-
-
-            delete_vms( nodes_to_cull[0:nr_of_nodes_to_delete] )
+            ecc.delete_idle_nodes(nr_of_nodes_to_delete)
 
 
         # Got room to make some additional nodes
@@ -115,15 +108,8 @@ def run_daemon() -> None:
                                         nodes_idle - config.ecc.nodes_spare)
 
             logger.info("Deleting {} idle nodes... (2)".format(nr_of_nodes_to_delete))
-            nodes = ecc.nodes_info().values()
-            nodes_to_cull = []
-            for n in nodes:
-                if n['slurm_state'] == 'idle':
-                    nodes_to_cull.append(n['vm_id'])
-
-
-            delete_vms( nodes_to_cull[0:nr_of_nodes_to_delete] )
-
+            ecc.delete_idle_nodes(nr_of_nodes_to_delete)
+            
         else:
             logger.info("The number of execute nodes are running seem appropriate, nothing to change.")
 

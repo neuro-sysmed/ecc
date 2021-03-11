@@ -14,6 +14,7 @@ from munch import Munch
 
 import kbr.config_utils as config_utils
 import kbr.log_utils as logger
+import kbr.version_utils as version_utils
 
 sys.path.append(".")
 import ecc
@@ -22,20 +23,26 @@ import ecc.cloudflare_utils as cloudflare_utils
 import ecc.ansible_utils as ansible_utils
 
 
+version = version_utils.as_string('ecc')
 config = None
+program_name = 'eccd'
 
-def init(config: Munch):
-    logger.init(name='eccd', log_file=config.get('logfile', None))
-    logger.set_log_level(config.ecc.log_level)
-    config.ecc.name_regex = config.ecc.name_template.format("(\d+)")
-    ecc.set_config( config )
-    ecc.openstack_connect(config.openstack)
-    cloudflare_utils.init(config.ecc.cloudflare_apikey, config.ecc.cloudflare_email)
-    #cloudflare_utils.add_record('A', 'ecc10.usegalaxy.no', '158.39.77.46', 1000)
-#    cloudflare_utils.purge_name('ecc1.usegalaxy.no')
-#    sys.exit()
-    ansible_utils.run_playbook(config.ecc.ansible_cmd, host="158.39.201.200", cwd=config.ecc.ansible_dir)
-#    sys.exit()
+
+def init(args):
+    global config
+    if args.config:
+        config = config_utils.readin_config_file(args.config[0])
+        logger.init(name=program_name, log_file=config.ecc.get('logfile', None))
+        logger.set_log_level(args.verbose)
+        logger.info(f'{program_name} (v:{version})')
+        config.ecc.name_regex = config.ecc.name_template.format("(\d+)")
+        ecc.set_config(config)
+        ecc.openstack_connect(config.openstack)
+        cloudflare_utils.init(config.ecc.cloudflare_apikey, config.ecc.cloudflare_email)
+    else:
+        logger.init(name=program_name)
+        logger.set_log_level(args.verbose)
+        logger.info(f'{program_name} (v:{version})')
 
 
 
@@ -46,20 +53,19 @@ def run_daemon() -> None:
     while (True):
 
         # get the current number of nodes and jobs
+        ecc.update_nodes_status()
         nodes_total = slurm_utils.nodes_total()
         nodes_idle = slurm_utils.nodes_idle()
         jobs_pending = slurm_utils.jobs_pending()
 
         print(f"nodes_total: {nodes_total}, nodes_idle: {nodes_idle}, jobs_pending: {jobs_pending}")
 
-        print( config )
-
         # Below the min number of nodes needed for our setup
         if nodes_total < config.ecc.nodes_min:
             logger.info("We are below the min number of nodes, creating {} nodes".format(
                 config.ecc.nodes_min - nodes_total))
 
-            node_names = ecc.create_node(cloud_init_file=config.ecc.cloud_init)
+            ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=config.ecc.nodes_min - nodes_total)
 
         ### there are jobs queuing, let see what we should do
 
@@ -71,7 +77,15 @@ def run_daemon() -> None:
                                         nodes_idle - config.ecc.nodes_spare)
 
             logger.info("Deleting {} idle nodes... (1)".format(nr_of_nodes_to_delete))
-            ecc.delete_idle_nodes(instances, condor.nodes(), nr_of_nodes_to_delete)
+
+            nodes = ecc.nodes_info().values()
+            nodes_to_cull = []
+            for n in nodes:
+                if n['slurm_state'] == 'idle':
+                    nodes_to_cull.append(n['vm_id'])
+
+
+            delete_vms( nodes_to_cull[0:nr_of_nodes_to_delete] )
 
 
         # Got room to make some additional nodes
@@ -79,10 +93,7 @@ def run_daemon() -> None:
 
             logger.info("We got stuff to do, creating some additional nodes...")
 
-            node_names = ecc.create_execute_nodes(instances, config, config.ecc.nodes_max - nodes_total,
-                                                  cloud_init_file=config.ecc.cloud_init_file)
-            log_nodes(node_names)
-
+            ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=config.ecc.nodes_max - nodes_total)
 
         # this one is just a sanity one
         elif (jobs.job_idle and nodes_total == config.ecc.nodes_max):
@@ -103,7 +114,14 @@ def run_daemon() -> None:
                                         nodes_idle - config.ecc.nodes_spare)
 
             logger.info("Deleting {} idle nodes... (2)".format(nr_of_nodes_to_delete))
-            ecc.delete_idle_nodes(instances, condor.nodes(), nr_of_nodes_to_delete)
+            nodes = ecc.nodes_info().values()
+            nodes_to_cull = []
+            for n in nodes:
+                if n['slurm_state'] == 'idle':
+                    nodes_to_cull.append(n['vm_id'])
+
+
+            delete_vms( nodes_to_cull[0:nr_of_nodes_to_delete] )
 
         else:
             logger.info("The number of execute nodes are running seem appropriate, nothing to change.")
@@ -113,21 +131,15 @@ def run_daemon() -> None:
 
 
 def main():
-    #    print( slurm_utils.nodes_idle() )
-    #    print( slurm_utils.nodes_total() )
 
     parser = argparse.ArgumentParser(description='eccd: the ecc daemon to be run on the master node ')
     parser.add_argument('-l', '--logfile', default=None, help="Logfile to write to, default is stdout")
     parser.add_argument('-v', '--verbose', default=4, action="count", help="Increase the verbosity of logging output")
-    parser.add_argument('config_file', metavar='config-file', nargs=1, help="yaml formatted config file",
+    parser.add_argument('config', metavar='config', nargs=1, help="yaml formatted config file",
                         default=ecc.utils.find_config_file('ecc.yaml'))
 
     args = parser.parse_args()
-
-    global config
-    config = config_utils.readin_config_file(args.config_file[0])
-    config.ecc.log_level = args.verbose
-    init(config)
+    init(args)
     run_daemon()
 
 

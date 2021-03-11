@@ -2,13 +2,7 @@ import re
 
 import kbr.run_utils as run_utils
 
-
-
-
 def available() -> bool:
-
-
-
     try:
         run = run_utils.launch_cmd( "sinfo" )
         if run.p_status:

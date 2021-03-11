@@ -63,7 +63,7 @@ def delete_record( dns_record_id:str ) -> None:
 
     zone_info = cf.zones.get(params={'name': zone_name})[0]
     zone_id = zone_info['id']
-    print( zone_id )
+#    print( zone_id )
     
     r = cf.zones.dns_records.delete(zone_id, dns_record_id)
     return r
@@ -72,8 +72,8 @@ def add_record( r_type, r_name, r_value, r_ttl:int=1000 ) -> None:
 
 
     zone_name = DEFAULT_ZONE
-    print(f"ZN :: {zone_name}")
-    print( cf.zones.get(params={'name': zone_name}) )
+ #   print(f"ZN :: {zone_name}")
+ #   print( cf.zones.get(params={'name': zone_name}) )
 
     zone_info = cf.zones.get(params={'name': zone_name})[0]
     zone_id = zone_info['id']

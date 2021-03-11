@@ -139,6 +139,7 @@ def list_jobs(commands):
         for job_state in jobs_by_state.keys():
             jobs.append({"state": job_state, "count": jobs_by_state[ job_state ]})
         print(tabulate(jobs,
+                       headers={'state': 'state', 'count': 'count'},
                        tablefmt="psql"))
 
 
@@ -174,6 +175,7 @@ def resize(commands):
         delete_vms( nodes_to_cull )
     elif len(nodes) < size:
         logger.info(f'We are a few nodes short, will create {size - len(nodes)}')
+        add_vms([size - len(nodes)])
     else:
         logger.info('Nothing to do, we have the perfect number of nodes')
 
@@ -181,7 +183,7 @@ def resize(commands):
 def main():
     commands = ['add', 'delete', 'list', 'size', 'run-playbook', 'init', 'help']
 
-    parser = argparse.ArgumentParser(description=f'ecc_cli: command line tool for the NGA ({version})')
+    parser = argparse.ArgumentParser(description=f'ecc_cli: command line tool for ECC ({version})')
 
     parser.add_argument('-c', '--config', help="ECC config file",
                         default='ecc.yaml')

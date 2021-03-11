@@ -165,16 +165,14 @@ def resize(commands):
 def main():
     commands = ['add', 'delete', 'list', 'size', 'run-playbook', 'init', 'help']
 
-    parser = argparse.ArgumentParser(description=f'nga_cli: command line tool for the NGA ({version})')
+    parser = argparse.ArgumentParser(description=f'ecc_cli: command line tool for the NGA ({version})')
 
-    parser.add_argument('-c', '--config', help="NGA config file, or set env NGA_CONF",
+    parser.add_argument('-c', '--config', help="ECC config file, or set env NGA_CONF",
                         default=args_utils.get_env_var('ECC_CONF'))
     parser.add_argument('-v', '--verbose', default=3, action="count", help="Increase the verbosity of logging output")
     parser.add_argument('command', nargs='*', help="{}".format(",".join(commands)))
 
     args = parser.parse_args()
-
-    #    config.ecc.log_level = args.verbose
     init(args)
 
     #    ecc.update_nodes_status()

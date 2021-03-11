@@ -87,21 +87,18 @@ def main():
     parser = argparse.ArgumentParser(description='ehos_status: print ehos status in telegraf format')
 #    parser.add_argument('config_file', metavar='config-file', nargs="*", help="yaml formatted config file",
 #                        default=ecc.utils.find_config_file('ecc.yaml'))
-    parser.add_argument('config_file', metavar='config-file', nargs="*", help="yaml formatted config file",
-                        default=file_dir() + '/../ecc.yaml')
+    parser.add_argument('config_file', metavar='config-file', nargs="+", help="yaml formatted config file",
+                        default='ecc.yaml')
     parser.add_argument('--list', action='store_true') # expected by ansible
     parser.add_argument('-H','--host-group', default='slurm', help='host group to put the nodes in') # expected by ansible
     parser.add_argument('-u','--ansible-user', default='centos', help='host group to put the nodes in') # expected by ansible
     parser.add_argument('-t','--trusted-host', default='yes', help='host group to put the nodes in') # expected by ansible
-    parser.add_argument('-c','--create-config', default=False, action='store_true', help='create config file') # expected by ansible
 
     args = parser.parse_args()
 
 
 
-
-
-    config = config_utils.readin_config_file(args.config_file)
+    config = config_utils.readin_config_file(args.config_file[0])
 
     logger.init(name='ecc_nodes', log_file=None)
     logger.set_log_level(0)

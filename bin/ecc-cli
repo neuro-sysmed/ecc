@@ -19,7 +19,7 @@ import ecc
 import ecc.cloudflare_utils as cloudflare_utils
 import ecc.ansible_utils as ansible_utils
 
-version = version_utils.as_string()
+version = version_utils.as_string('ecc')
 config = None
 program_name = 'ecc-cli'
 

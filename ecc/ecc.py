@@ -149,7 +149,6 @@ def delete_idle_nodes(count:int=1):
         if n['slurm_state'] == 'idle':
             nodes_to_cull.append(n['vm_id'])
 
-
     delete_nodes( nodes_to_cull[0:count] )
     return
 
@@ -165,6 +164,8 @@ def delete_nodes(ids:[]):
         ids = [ids]
 
     for id in ids:
+        if id is None:
+            continue 
         logger.info("deleting node {}".format( id ))
         vm = openstack.server( id )
 

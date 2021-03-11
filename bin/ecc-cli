@@ -197,8 +197,6 @@ def main():
     #    sys.exit()
 
 
-    global verbose
-    verbose = args.verbose
 
     args_utils.min_count(1, len(args.command),
                          msg="{} takes one of the following commands: {}".format(program_name,

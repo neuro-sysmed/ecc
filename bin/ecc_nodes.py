@@ -88,7 +88,7 @@ def main():
 #    parser.add_argument('config_file', metavar='config-file', nargs="*", help="yaml formatted config file",
 #                        default=ecc.utils.find_config_file('ecc.yaml'))
     parser.add_argument('config_file', metavar='config-file', nargs="*", help="yaml formatted config file",
-                        default=file_dir() + '/../ecc.yaml')
+                        default='ecc.yaml')
     parser.add_argument('--list', action='store_true') # expected by ansible
     parser.add_argument('-H','--host-group', default='slurm', help='host group to put the nodes in') # expected by ansible
     parser.add_argument('-u','--ansible-user', default='centos', help='host group to put the nodes in') # expected by ansible
@@ -127,8 +127,8 @@ def main():
                                                  'trusted_host': args.trusted_host}
 
 
-    pp.pprint(  hosts )
- #   print( json.dumps( hosts ))
+#    pp.pprint(  hosts )
+    print( json.dumps( hosts ))
 
 if __name__ == '__main__':
     main()

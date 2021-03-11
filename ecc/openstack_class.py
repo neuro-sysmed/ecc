@@ -766,7 +766,7 @@ class Openstack(object):
             time.sleep(1)
             volumes_detached += 1
 
-        return volumes_detached;
+        return volumes_detached
 
     def security_groups(self):
         """ fetches the security groups from a openstack 

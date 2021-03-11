@@ -167,8 +167,8 @@ def main():
 
     parser = argparse.ArgumentParser(description=f'ecc_cli: command line tool for the NGA ({version})')
 
-    parser.add_argument('-c', '--config', help="ECC config file, or set env NGA_CONF",
-                        default=args_utils.get_env_var('ECC_CONF'))
+    parser.add_argument('-c', '--config', help="ECC config file",
+                        default='ecc.yaml')
     parser.add_argument('-v', '--verbose', default=3, action="count", help="Increase the verbosity of logging output")
     parser.add_argument('command', nargs='*', help="{}".format(",".join(commands)))
 

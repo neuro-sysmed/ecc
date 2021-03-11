@@ -21,11 +21,12 @@ def get_requirements():
 
 
 def scripts(directory='bin/*') -> []:
-    return glob.glob( directory )
+    print(glob.glob( directory ))
+    return list(glob.glob( directory ))
 
 
 
-setup(name='ehos',
+setup(name='ecc',
       version= get_version(),
       description='Elastic Compute Cluster',
       url='https://github.com/usegalaxy-no/ecc/',
@@ -38,6 +39,5 @@ setup(name='ehos',
         'Programming Language :: Python :: +3.6'
         ],
       install_requires=[ get_requirements() ],
-      scripts=[ scripts() ],
-      include_package_data=True,
-      zip_safe=False)
+      scripts=scripts(),
+)

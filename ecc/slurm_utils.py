@@ -41,6 +41,8 @@ def jobs():
 
     jobs = []
     for line in run.split("\n"):
+        if line == '':
+            continue
         fields = line.split()
         jobs.append({"id": fields[0], "user": fields[3], "state":fields[4], "time": fields[5]})
 

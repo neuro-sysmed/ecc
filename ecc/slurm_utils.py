@@ -25,14 +25,21 @@ def jobs():
     #"%.18i %.9P %.8j %.8u %.2t %.10M %.6D %R"
     #JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
     #33187 usegalaxy     test sysadmin  R       0:15      1 slurm.usegalaxy.no
-    cmd = "squeue -h"
+    cmd = "squeue -hl"
 
-#    run = run_utils.launch_cmd( cmd )
+    run = run_utils.launch_cmd( cmd )
 
-    run = "  33187 usegalaxy     test sysadmin  PD       0:15      1 slurm.usegalaxy.no\n 33187 usegalaxy     test sysadmin  R       0:15      1 slurm.usegalaxy.no"
+#    run = "  33187 usegalaxy     test sysadmin  PD       0:15      1 slurm.usegalaxy.no\n 33187 usegalaxy     test sysadmin  R       0:15      1 slurm.usegalaxy.no"
+
+
+    run = run.stdout
+    if run == b'':
+        return []
+
+    run = run.decode('utf-8')
+
 
     jobs = []
-
     for line in run.split("\n"):
         fields = line.split()
         jobs.append({"id": fields[0], "user": fields[3], "state":fields[4], "time": fields[5]})
@@ -84,10 +91,12 @@ def nodes():
     if run == b'':
         return []
 
-    run = str(run)
+    run = run.decode('utf-8')
 
     nodes = []
     for line in run.split("\n"):
+        if line == '':
+            continue
         fields = line.split()
         for node in fields[5].split(","):
             nodes.append( {'name':node, 'avail': fields[2], "state": fields[4]})

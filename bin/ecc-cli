@@ -18,6 +18,7 @@ sys.path.append(".")
 import ecc
 import ecc.cloudflare_utils as cloudflare_utils
 import ecc.ansible_utils as ansible_utils
+import ecc.slurm_utils as slurm_utils
 
 version = version_utils.as_string('ecc')
 config = None
@@ -107,7 +108,6 @@ def delete_vms(ids: []):
 
 
 def list_vms(commands):
-    all_servers = False
 
     if len(commands) > 0:
         print("Help:")
@@ -123,6 +123,22 @@ def list_vms(commands):
 
         print(tabulate(nodes,
                        headers={'vm_id': 'id', 'name': 'name', 'vm_state': 'vm-state', 'slurm_state': 'slurm-state'},
+                       tablefmt="psql"))
+
+
+def list_jobs(commands):
+
+    if len(commands) > 0:
+        print("Help:")
+        print("==========================")
+        print(f"{program_name} jobs")
+        return
+    else:
+        jobs = []
+        jobs_by_state = slurm_utils.job_counts_by_state()
+        for job_state in jobs_by_state.keys():
+            jobs.append({"state": job_state, "count": jobs_by_state[ job_state ]})
+        print(tabulate(jobs,
                        tablefmt="psql"))
 
 
@@ -200,6 +216,9 @@ def main():
         sys.exit()
     elif command == 'run-playbook':
         ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
+        sys.exit()
+    elif command == 'jobs':
+        list_jobs(args.command)
         sys.exit()
     elif command == 'init':
         write_config_file()

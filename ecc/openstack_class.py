@@ -105,7 +105,7 @@ class Openstack(object):
           None
         """
 
-        print(f"Name -- {name}")
+#        print(f"Name -- {name}")
 
         self.check_connection()
 
@@ -223,7 +223,7 @@ class Openstack(object):
         logger.debug("Spooling server log for id:{}".format(id))
 
         results = []
-        logger.debug( log )
+#        logger.debug( log )
 
         for line in log.split("\n"):
             if (re.search(match, line)):

@@ -70,48 +70,24 @@ def run_daemon() -> None:
 
         ### there are jobs queuing, let see what we should do
 
-        # got jobs in the queue but less than or equal to our idle + spare nodes, do nothing
-        elif jobs_pending and jobs_pending <= nodes_idle:
-            logger.info("We got stuff to do, but seems to have excess nodes to cope...")
-
-            nr_of_nodes_to_delete = min(nodes_total - config.ecc.nodes_min, nodes_idle - jobs_pending,
-                                        nodes_idle - config.ecc.nodes_spare)
-
-            logger.info("Deleting {} idle nodes... (1)".format(nr_of_nodes_to_delete))
-
-            ecc.delete_idle_nodes(nr_of_nodes_to_delete)
-
-
         # Got room to make some additional nodes
         elif (jobs_pending and nodes_idle == 0 and nodes_total <= config.ecc.nodes_max):
 
             logger.info("We got stuff to do, creating some additional nodes...")
+            nodes_needed = min( jobs_pending, config.ecc.nodes_max - nodes_total)
 
-            ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=config.ecc.nodes_max - nodes_total)
-
-        # this one is just a sanity one
-        elif (jobs_pending and nodes_total == config.ecc.nodes_max):
-            logger.info("We are busy. but all nodes we are allowed have been created, nothing to do")
-
-
-        elif (jobs_pending):
-            logger.info("We got stuff to do, but seems to have nodes to cope...")
-
-
-        ### Looks like we have an excess of nodes, lets cull some
+            ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=nodes_needed)
 
         # We got extra nodes not needed and we can delete some without going under the min cutoff, so lets get rid of some
-        elif (nodes_total > config.ecc.nodes_min and
-              nodes_idle > config.ecc.nodes_spare):
+        elif jobs_pending == 0 and nodes_total > config.ecc.nodes_min:
 
-            nr_of_nodes_to_delete = min(nodes_total - config.ecc.nodes_min,
-                                        nodes_idle - config.ecc.nodes_spare)
+            nr_of_nodes_to_delete = min(nodes_total - config.ecc.nodes_min)
 
-            logger.info("Deleting {} idle nodes... (2)".format(nr_of_nodes_to_delete))
+            logger.info(f"Deleting {nr_of_nodes_to_delete} idle nodes... ")
             ecc.delete_idle_nodes(nr_of_nodes_to_delete)
-            
+
         else:
-            logger.info("The number of execute nodes are running seem appropriate, nothing to change.")
+            logger.info("Nothing to change.")
 
         logger.info("Napping for {} seccnd(s).".format(config.ecc.sleep))
         time.sleep(config.ecc.sleep)

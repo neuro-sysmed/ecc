@@ -74,10 +74,8 @@ def run_daemon() -> None:
         elif (jobs_pending and nodes_idle == 0 and nodes_total <= int(config.ecc.nodes_max)):
 
             logger.info("We got stuff to do, creating some additional nodes...")
-            nodes_needed = min( jobs_pending, config.ecc.nodes_max - nodes_total)
-            logger.info(f'will create {nodes_needed}')
 
-            ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=nodes_needed)
+            ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=1)
 
         # We got extra nodes not needed and we can delete some without going under the min cutoff, so lets get rid of some
         elif jobs_pending == 0 and nodes_total > config.ecc.nodes_min:

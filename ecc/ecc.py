@@ -216,12 +216,13 @@ def create_nodes(cloud_init_file:str=None, count=1):
     except Exception as e:
         logger.warning("Could not create execute server")
         logger.debug("Error: {}".format(e))
-#        return
+        return
 
     try:
         ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
     except:
         print(f"failed to run playbook: 'run_playbook({config.ecc.ansible_cmd}, host={node_ips[0]}, cwd={config.ecc.ansible_dir})'")
+        return
 
     return node_name
 

@@ -71,10 +71,11 @@ def run_daemon() -> None:
         ### there are jobs queuing, let see what we should do
 
         # Got room to make some additional nodes
-        elif (jobs_pending and nodes_idle == 0 and nodes_total <= config.ecc.nodes_max):
+        elif (jobs_pending and nodes_idle == 0 and nodes_total <= int(config.ecc.nodes_max)):
 
             logger.info("We got stuff to do, creating some additional nodes...")
             nodes_needed = min( jobs_pending, config.ecc.nodes_max - nodes_total)
+            logger.info(f'will create {nodes_needed}')
 
             ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=nodes_needed)
 

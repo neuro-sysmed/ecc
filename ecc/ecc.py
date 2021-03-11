@@ -66,6 +66,8 @@ def update_nodes_status():
     snodes = slurm_utils.nodes()
 
     global nodes
+    nodes = {}
+
     for vnode in vnodes:
         if vnode['name'] not in nodes:
             nodes[vnode['name']] = {}

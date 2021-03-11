@@ -54,8 +54,9 @@ def run_daemon() -> None:
 
         # get the current number of nodes and jobs
         ecc.update_nodes_status()
-        nodes_total = slurm_utils.nodes_total()
-        nodes_idle = slurm_utils.nodes_idle()
+
+        nodes_total = ecc.nodes_total()
+        nodes_idle = ecc.nodes_idle()
         jobs_pending = slurm_utils.jobs_pending()
 
         print(f"nodes_total: {nodes_total}, nodes_idle: {nodes_idle}, jobs_pending: {jobs_pending}")
@@ -70,7 +71,7 @@ def run_daemon() -> None:
         ### there are jobs queuing, let see what we should do
 
         # got jobs in the queue but less than or equal to our idle + spare nodes, do nothing
-        elif jobs_pending and jobs.job_idle <= nodes_idle:
+        elif jobs_pending and jobs_pending <= nodes_idle:
             logger.info("We got stuff to do, but seems to have excess nodes to cope...")
 
             nr_of_nodes_to_delete = min(nodes_total - config.ecc.nodes_min, nodes_idle - jobs_pending,
@@ -96,11 +97,11 @@ def run_daemon() -> None:
             ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=config.ecc.nodes_max - nodes_total)
 
         # this one is just a sanity one
-        elif (jobs.job_idle and nodes_total == config.ecc.nodes_max):
+        elif (jobs_pending and nodes_total == config.ecc.nodes_max):
             logger.info("We are busy. but all nodes we are allowed have been created, nothing to do")
 
 
-        elif (jobs.job_idle):
+        elif (jobs_pending):
             logger.info("We got stuff to do, but seems to have nodes to cope...")
 
 

@@ -1,5 +1,6 @@
 from setuptools import setup
 import json
+import glob
 
 def readme():
     with open('README.rst') as f:

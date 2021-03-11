@@ -10,6 +10,9 @@ def get_version():
     with open('version.json') as json_file:
         data = json.load(json_file)
 
+    if 'dev' in data:
+        return "{}.{}.{}-dev{}".format( data['major'], data['minor'], data['patch'], data['dev'])
+
     return "{}.{}.{}".format( data['major'], data['minor'], data['patch'])
 
 def get_requirements():

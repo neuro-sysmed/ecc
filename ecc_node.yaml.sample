@@ -1,0 +1,24 @@
+#cloud-config
+# vim: syntax=yaml
+#
+# This is the configuration syntax that the write_files module
+# will know how to understand. encoding can be given b64 or gzip or (gz+b64).
+# The content will be decoded accordingly and then written to the path that is
+# provided.
+#
+# Note: Content strings here are truncated for example purposes.
+# Run yum upgrade
+#package_upgrade: true
+
+final_message: "The ecc node is up"
+
+users:
+  - default
+  - name: ecc
+    primary-group: ecc
+    groups: wheel
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh-authorized-keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDKMyVff1KJGW9yyhd+H1m9j3fAKHrV6vCN/R5mxokHWRxGeMivpoS4vbbBHW7YnK95wqY9dNvaRVQIREygBMnfM7+Qwhdf0go4cqtFdugbyVd55AkVzAAHh/VFiD9DNIAYLLypzU/ReziQPZuW/SZ9Hb1ZvxKyM/uB+LeCrL3nTiTUQavPxS8j9LRkiDSZaXZ1umcAEr7cno4hQgI18NsmH/vOIPHG3UM0dDFkUCk8VV97V7wIRLBmK/ToSkKMML9xf3Anv171g4VUjPXMpz6+HCNLcLB4eCzkW6mRjpLbKOMeUT16F+VWr3hq9GuN4MVkcp2XFxwBvWUlIdb9y/tn ehos@e2.usegalaxy.no
+
+

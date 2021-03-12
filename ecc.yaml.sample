@@ -1,0 +1,29 @@
+openstack:
+    auth_url: https://api.uh-iaas.no:5000/v3
+    password: <PASSWORD>
+    project_domain_name: dataporten
+    project_name: elixir-nrec-prod-backend
+    region_name: bgo
+    user_domain_name: dataporten
+    username: <EMAIL>
+
+ecc:
+    log: ecc.log
+    nodes_max: 6
+    nodes_min: 1
+    sleep: 30
+
+    flavor: m1.large
+    image: GOLD CentOS 7
+    key: mykey
+    network: dualStack
+    security_groups: slurm-node
+    name_template: "ecc{}.usegalaxy.no"
+    cloud_init: /home/brugger/projects/usegalaxy/ecc/ecc_node.yaml
+    ansible_dir: /home/brugger/projects/usegalaxy/infrastructure-playbook/env/test
+    ansible_cmd: "../../venv/bin/ansible-playbook -i /home/brugger/projects/usegalaxy/ecc/bin/ecc_nodes.py slurm.yml -e'ansible_user=centos'"
+
+    cloudflare_apikey: <API-KEY>
+    cloudflare_email: dnsadmin@ii.uib.no
+
+

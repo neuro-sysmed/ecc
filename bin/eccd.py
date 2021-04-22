@@ -88,7 +88,7 @@ def run_daemon() -> None:
         else:
             logger.info("Nothing to change.")
 
-        logger.info("Napping for {} seccnd(s).".format(config.ecc.sleep))
+        logger.info("Napping for {} second(s).".format(config.ecc.sleep))
         time.sleep(config.ecc.sleep)
 
 

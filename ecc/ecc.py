@@ -118,7 +118,7 @@ def nodes_idle(update:bool=False):
     count = 0
     for node in nodes:
         node = nodes[ node ]
-        if node.get('slurm_state', None) in ['mix', 'idle'] and node.get('vm_state', None) == 'active':
+        if node.get('slurm_state', None) == 'idle' and node.get('vm_state', None) == 'active':
             count += 1
 
     return count

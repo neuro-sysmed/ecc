@@ -17,6 +17,7 @@ from munch import Munch
 import kbr.log_utils as logger
 
 import ecc.openstack_class as openstack_class
+import ecc.azure_class as azure_class
 import ecc.slurm_utils as slurm_utils
 import ecc.utils as ecc_utils
 import ecc.ansible_utils as ansible_utils
@@ -32,7 +33,7 @@ logging.getLogger('openstack').setLevel(logging.CRITICAL)
 logging.getLogger('dogpile').setLevel(logging.CRITICAL)
 
 config = None
-openstack = None
+cloud = None
 nodes = {}
 
 def set_config(new_config:dict):
@@ -41,12 +42,18 @@ def set_config(new_config:dict):
 
 
 def openstack_connect(config):
-    global openstack
-    openstack = openstack_class.Openstack()
-    openstack.connect(**config)
+    global cloud
+    cloud = openstack_class.Openstack()
+    cloud.connect(**config)
+
+def azure_connect(Subscription_Id):
+    global cloud
+    cloud = azure_class.Azure()
+    cloud.connect(Subscription_Id)
+
 
 def servers(filter:str=None):
-    servers = openstack.servers()
+    servers = cloud.servers()
 
     if filter:
         filter = re.compile(filter)
@@ -167,12 +174,12 @@ def delete_nodes(ids:[]):
         if id is None:
             continue 
         logger.info("deleting node {}".format( id ))
-        vm = openstack.server( id )
+        vm = cloud.server( id )
 
         logger.info('deleting DNS entry...')
         cloudflare_utils.purge_name( vm['name'])
         logger.info('deleting VM...')
-        openstack.server_delete( id )
+        cloud.server_delete( id )
 
     logger.info('running playbook')
     ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
@@ -190,18 +197,18 @@ def create_nodes(cloud_init_file:str=None, count=1):
 
     try:
         for _ in range(0, count):
-            node_id = next_id(names=openstack.server_names())
+            node_id = next_id(names=cloud.server_names())
             node_name = config.ecc.name_template.format( node_id)
             print(f"creating node with name {node_name}")
 
-            node_id = openstack.server_create( name=node_name,
+            node_id = cloud.server_create( name=node_name,
                                            userdata_file=cloud_init_file,
                                            **config.ecc )
 
             logger.debug("Execute server {}/{} is vm_booting".format( node_id, node_name))
             # This is a blocking call, so will hang here till the server is online.
-            openstack.wait_for_log_entry(node_id)
-            node_ips = openstack.server_ip(node_id)
+            cloud.wait_for_log_entry(node_id)
+            node_ips = cloud.cloud.server_ip(node_id)
             try:
                 cloudflare_utils.add_record('A', node_name, node_ips[0], 1000)
             except:
@@ -272,26 +279,46 @@ openstack:
     user_domain_name: <USER DOMAIN>
     username: <USER EMAIL>
 
+azure:
+    subscription_id: <SUBSCRIPTION ID>    
+
 ecc:
     log: ecc.log
     nodes_max: 6
     nodes_min: 1
     nodes_spare: 1
     sleep: 30
-
-    flavor: m1.medium
-    image: GOLD CentOS 7
-    key: <SSHKEY>
-    network: dualStack
-    security_groups: slurm-node
     name_template: "ecc{}.usegalaxy.no"
+
+    image: GOLD CentOS 7
     cloud_init: <PATH>/ecc_node.yaml
     ansible_dir: <PATH, eg: /usr/local/ansible/infrastructure-playbook/env/test>
     ansible_cmd: "<CMD, EG: ./venv/bin/ansible-playbook -i ecc_nodes.py slurm.yml"
 
+    # If doing DNS
     cloudflare_apikey: <API KEY>
-    cloudflare_email: <EMAIL>'''
+    cloudflare_email: <EMAIL>
 
+
+    # openstack variables
+    flavor: m1.medium
+    key: <SSHKEY>
+    network: dualStack
+    security_groups: slurm-node
+
+    
+    #azure variables
+    compute_group: FOR-NEURO-SYSMED-UTV-COMPUTE
+    network_group: FOR-NEURO-SYSMED-UTV-NETWORK
+    virtual_network_name: FOR-NEURO-SYSMED-UTV-VNET
+    virtual_subnet_name:  WorkloadsSubnet
+    vm_size: Standard_D2_v2
+    admin_username: root
+    admin_password: <SECRET!>
+    
+    '''
+
+    #
 
     with open(filename, 'w') as outfile:
         outfile.write(config)

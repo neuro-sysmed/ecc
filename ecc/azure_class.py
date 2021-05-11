@@ -203,7 +203,10 @@ class Azure(object):
 
         vm = self.server(id)
         vm_dict = self.id_to_dict( id )
-        self._compute_client.virtual_machines.begin_delete(vm_dict['resourceGroups'], vm_dict['virtualMachines'])
+#        self._compute_client.virtual_machines.begin_power_off(vm_dict['resourceGroups'], vm_dict['virtualMachines'])
+        request = self._compute_client.virtual_machines.begin_delete(vm_dict['resourceGroups'], vm_dict['virtualMachines'])
+        while not request.done():
+          sleep(1)
 
         for network_interface in vm.network_profile.network_interfaces:
           network_dict = self.id_to_dict( network_interface.id )

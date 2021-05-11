@@ -189,10 +189,18 @@ class Azure(object):
 
         return names
 
-    def server_delete(self, id: str, compute_group:str, **kwargs):
+    def server_delete(self, id: str, **kwargs):
 
 #        self._compute_client.virtual_machines.begin_delete('FOR-NEURO-SYSMED-UTV-COMPUTE', 'kbr-api-test')
-        self._compute_client.virtual_machines.begin_delete(resource_group, name)
+
+        for network_interface in vm.network_profile.network_interfaces:
+          print(id)
+          id_dict = self.id_to_dict( network_interface.id )
+          self._network_client.network_interface.begin_delete(id_dict['resourceGroups'], id_dict['networkInterfaces'])
+
+        print(id)
+        id_dict = self.id_to_dict( id )
+        self._compute_client.virtual_machines.begin_delete(id_dict['resourceGroups'], id_dict['virtualMachines'])
 
 
     def server_stop(self, id: str, compute_group:str, **kwargs): # done, needs testing

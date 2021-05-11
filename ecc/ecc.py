@@ -176,8 +176,10 @@ def delete_nodes(ids:[]):
         logger.info("deleting node {}".format( id ))
         vm = cloud.server( id )
 
-        logger.info('deleting DNS entry...')
-        cloudflare_utils.purge_name( vm['name'])
+        if 'cloudflare' in config.ecc:
+            logger.info('deleting DNS entry...')
+            cloudflare_utils.purge_name( vm['name'])
+
         logger.info('deleting VM...')
         cloud.server_delete( id )
 
@@ -209,10 +211,12 @@ def create_nodes(cloud_init_file:str=None, count=1):
             # This is a blocking call, so will hang here till the server is online.
             cloud.wait_for_log_entry(node_id)
             node_ips = cloud.cloud.server_ip(node_id)
-            try:
-                cloudflare_utils.add_record('A', node_name, node_ips[0], 1000)
-            except:
-                print(f"failed to add dns entry: 'add_record('A', {node_name}, {node_ips[0]}, 1000)'")
+
+            if 'cloudflare' in config.ecc:
+                try:
+                    cloudflare_utils.add_record('A', node_name, node_ips[0], 1000)
+                except:
+                    print(f"failed to add dns entry: 'add_record('A', {node_name}, {node_ips[0]}, 1000)'")
 
             nodes[node_name] = {}
             nodes[node_name]['vm_id'] = node_id
@@ -271,13 +275,13 @@ def write_config_file(filename:str='ecc.yml') -> None:
 
     config = '''
 openstack:
-    auth_url: <AUTH URL>
+    auth_url: https://api.uh-iaas.no:5000/v3
     password: <PASSWORD>
-    project_domain_name: <PROJECT DOMAIN>
-    project_name: <PROJECT NAME>
-    region_name: <REGION>
-    user_domain_name: <USER DOMAIN>
-    username: <USER EMAIL>
+    project_domain_name: dataporten
+    project_name: elixir-nrec-prod-backend
+    region_name: bgo
+    user_domain_name: dataporten
+    username: <USERNAME>
 
 azure:
     subscription_id: <SUBSCRIPTION ID>    
@@ -295,7 +299,7 @@ ecc:
     ansible_dir: <PATH, eg: /usr/local/ansible/infrastructure-playbook/env/test>
     ansible_cmd: "<CMD, EG: ./venv/bin/ansible-playbook -i ecc_nodes.py slurm.yml"
 
-    # If doing DNS
+    # If doing DNS for nodes
     cloudflare_apikey: <API KEY>
     cloudflare_email: <EMAIL>
 

@@ -34,48 +34,21 @@ def init(args):
         logger.info(f'{program_name} (v:{version})')
         config.ecc.name_regex = config.ecc.name_template.format("(\d+)")
         ecc.set_config(config)
-        ecc.openstack_connect(config.openstack)
-        cloudflare_utils.init(config.ecc.cloudflare_apikey, config.ecc.cloudflare_email)
+        if 'openstack' in config:
+            ecc.openstack_connect(config.openstack)
+        elif 'azure' in config:
+            ecc.azure_connect( config.azure )
+        else:
+            print('No backend configured, options are: openstack and azure')
+        
+        if 'cloudflare' in config.ecc:
+            cloudflare_utils.init(config.ecc.cloudflare_apikey, config.ecc.cloudflare_email)
     else:
         logger.init(name=program_name)
         logger.set_log_level(args.verbose)
         logger.info(f'{program_name} (v:{version})')
 
 
-
-
-def write_config_file():
-    content = ''' #config template file for nrec
-openstack:
-    auth_url: https://api.uh-iaas.no:5000/v3
-    password: <PASSWORD>
-    project_domain_name: dataporten
-    project_name: elixir-nrec-prod-backend
-    region_name: bgo
-    user_domain_name: dataporten
-    username: <USERNAME>
-
-ecc:
-    log: ecc.log
-    nodes_max: 6
-    nodes_min: 1
-    nodes_spare: 1
-    sleep: 30
-
-    flavor: m1.large
-    image: GOLD CentOS 7
-    key: <SSH KEY NAME>
-    network: dualStack
-    security_groups: slurm-node
-    name_template: "ecc{}.usegalaxy.no"
-    cloud_init: <CLOUD INIT FILE>
-    ansible_dir: <ANSIBLE DIR /.../infrastructure-playbook/env/test>
-    ansible_cmd: <EG: "../../venv/bin/ansible-playbook -i /home/brugger/projects/usegalaxy/ecc/bin/ecc_nodes.py slurm.yml -e'ansible_user=centos'" >
-
-    cloudflare_apikey: <API_KEY>
-    cloudflare_email: dnsadmin@ii.uib.no
-'''
-    file_utils.write( "ecc.yaml", content)
 
 
 
@@ -221,7 +194,7 @@ def main():
         list_jobs(args.command)
         sys.exit()
     elif command == 'init':
-        write_config_file()
+        ecc.write_config_file()
         sys.exit()
     else:
         print("The tool support the following commands: {}\n".format(string_utils.comma_sep(commands)))

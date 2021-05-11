@@ -56,7 +56,7 @@ class Azure(object):
       interface_name = f"{name}-eth0"
 
       network_interface = self._network_client.network_interfaces.begin_create_or_update(
-                     network_group_name,
+                     network_group,
                      interface_name,
                      { 'location': "westeurope",
                        'ip_configurations': [{
@@ -72,7 +72,7 @@ class Azure(object):
       print( network_interface )
 
       vm = self._compute_client.virtual_machines.begin_create_or_update(
-                compute_group_name,
+                compute_group,
                 name,
                 { "location": "westeurope",
                   "hardware_profile": {

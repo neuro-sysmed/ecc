@@ -6,6 +6,7 @@
 # Kim Brugger (14 Sep 2018), contact: kim@brugger.dk
 
 import sys
+import os
 import re
 import pprint
 from ecc.utils import make_node_name

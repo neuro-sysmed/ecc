@@ -50,20 +50,8 @@ class Azure(object):
 
         logger.debug("Connected to openstack server")
 
-    def server_create(self, name: str, image: str, vm_size:str, network: str, **kwargs):
-      #Done, needs testing and popping args in correctly
-
-      vm_size = "Standard_D2_v2"
-
-      admin_username = "brugger"
-      admin_password = "AUKWAso4P5G2IbZ"
-
-      compute_group_name    = "FOR-NEURO-SYSMED-UTV-COMPUTE"
-      network_group_name    = "FOR-NEURO-SYSMED-UTV-NETWORK"
-
-      virtual_network_name  = "FOR-NEURO-SYSMED-UTV-VNET"
-      virtual_subnet_name   = "WorkloadsSubnet"
-      
+    def server_create(self, name: str, image: str, vm_size:str, **kwargs):
+      #Done, needs testing and popping args in correctly      
 
       interface_name = f"{name}-eth0"
 

@@ -97,7 +97,7 @@ def nodes():
         if line == '':
             continue
         fields = line.split()
-        nodes.append({'name':field[0], 'avail': fields[1], "state": fields[3]})
+        nodes.append({'name':fields[0], 'avail': fields[1], "state": fields[3]})
 #        for node in fields[5].split(","):
 #            nodes.append( {'name':node, 'avail': fields[2], "state": fields[4]})
 

@@ -2,7 +2,6 @@ kbr@git+https://github.com/brugger/kbr-tools.git
 munch
 openstacksdk
 cloudflare
-git st
 azure.identity
 azure.mgmt.resource
 azure.mgmt.network

@@ -6,7 +6,6 @@ import os
 
 from tabulate import tabulate
 
-sys.path.append(".")
 
 import kbr.config_utils as config_utils
 import kbr.log_utils as logger
@@ -16,6 +15,7 @@ import kbr.string_utils as string_utils
 import kbr.file_utils as file_utils
 
 sys.path.append(".")
+
 import ecc
 import ecc.cloudflare_utils as cloudflare_utils
 import ecc.ansible_utils as ansible_utils
@@ -58,8 +58,9 @@ def add_vms(commands):
     if len(commands) == 0:
         commands.append(1)
 
+    count = int(args_utils.get_or_default(commands, 1))
     try:
-        count = int(commands.pop(0))
+        ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=int(count))
     except:
         if count != 'help':
             print(f"Error: Unknown command '{count}'\n")
@@ -68,7 +69,6 @@ def add_vms(commands):
         print("==========================")
         print(f"{program_name} create [number, default=1]")
 
-    ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=int(count))
 
 
 def delete_vms(ids: []):

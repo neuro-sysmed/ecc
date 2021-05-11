@@ -192,7 +192,7 @@ def delete_nodes(ids:[]):
 
 
 
-def create_nodes(cloud_init_file:str=None, count=1):
+def create_nodes(cloud_init_file:str=None, count:int=1):
 
 
 #    resources = openstack.get_resources_available()

@@ -192,13 +192,13 @@ class Azure(object):
     def server_delete(self, id: str, **kwargs):
 
         vm = self.server(id)
+        id_dict = self.id_to_dict( id )
+        self._compute_client.virtual_machines.begin_stop(id_dict['resourceGroups'], id_dict['virtualMachines'])
         for network_interface in vm.network_profile.network_interfaces:
-          print(id)
-          id_dict = self.id_to_dict( network_interface.id )
-          self._network_client.network_interfaces.begin_delete(id_dict['resourceGroups'], id_dict['networkInterfaces'])
+          network_dict = self.id_to_dict( network_interface.id )
+          self._network_client.network_interfaces.begin_delete(network_dict['resourceGroups'], network_dict['networkInterfaces'])
 
         print(id)
-        id_dict = self.id_to_dict( id )
         self._compute_client.virtual_machines.begin_delete(id_dict['resourceGroups'], id_dict['virtualMachines'])
 
 

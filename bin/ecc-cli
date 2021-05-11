@@ -27,7 +27,7 @@ program_name = 'ecc-cli'
 
 def init(args):
     global config
-    if args.config:
+    if args.config and os.path.isfile( args.config ):
         config = config_utils.readin_config_file(args.config)
         logger.init(name=program_name, log_file=config.ecc.get('logfile', None))
         logger.set_log_level(args.verbose)

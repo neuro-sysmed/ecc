@@ -150,9 +150,10 @@ class Azure(object):
               power_state = v
             elif k == 'ProvisioningState':
               provisioning_state = v
+
           ips = self.server_ip(vm.id)
 
-          servers.append({'id': vm.id, 'name': vm.name.lower(), 'status': power_state, 'ips': ips})
+          servers.append({'id': vm.id, 'name': vm.name.lower(), 'status': power_state, 'ip': ips})
           
         logger.debug("Servers: \n{}".format(pp.pformat(servers)))
         return servers
@@ -171,9 +172,9 @@ class Azure(object):
         ips = []
         vm = self.server(id)
 
-        for network_interface_id in vm.network_profile.network_interfaces:
-          id_dict = self.id_to_dict( network_interface_id )
-          network_interface = network_client.network_interfaces.get(id_dict('resourceGroups'), id_dict('networkInterfaces'))
+        for network_interface in vm.network_profile.network_interfaces:
+          id_dict = self.id_to_dict( network_interface.id )
+          network_interface = self._network_client.network_interfaces.get(id_dict['resourceGroups'], id_dict['networkInterfaces'])
           for ip in network_interface.ip_configurations: 
             if ip.private_ip_address_version == f"IPv{ipv}":
               ips.append( ip.private_ip_address)

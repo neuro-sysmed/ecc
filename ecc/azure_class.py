@@ -195,7 +195,7 @@ class Azure(object):
         for network_interface in vm.network_profile.network_interfaces:
           print(id)
           id_dict = self.id_to_dict( network_interface.id )
-          self._network_client.network_interface.begin_delete(id_dict['resourceGroups'], id_dict['networkInterfaces'])
+          self._network_client.network_interfaces.begin_delete(id_dict['resourceGroups'], id_dict['networkInterfaces'])
 
         print(id)
         id_dict = self.id_to_dict( id )

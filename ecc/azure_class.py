@@ -193,13 +193,13 @@ class Azure(object):
 
         vm = self.server(id)
         id_dict = self.id_to_dict( id )
-        self._compute_client.virtual_machines.begin_power_off(id_dict['resourceGroups'], id_dict['virtualMachines'])
+#        self._compute_client.virtual_machines.begin_power_off(id_dict['resourceGroups'], id_dict['virtualMachines'])
+        self._compute_client.virtual_machines.begin_delete(id_dict['resourceGroups'], id_dict['virtualMachines'])
+
         for network_interface in vm.network_profile.network_interfaces:
           network_dict = self.id_to_dict( network_interface.id )
           self._network_client.network_interfaces.begin_delete(network_dict['resourceGroups'], network_dict['networkInterfaces'])
 
-        print(id)
-        self._compute_client.virtual_machines.begin_delete(id_dict['resourceGroups'], id_dict['virtualMachines'])
 
 
     def server_stop(self, id: str, compute_group:str, **kwargs): # done, needs testing

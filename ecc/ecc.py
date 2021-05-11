@@ -216,7 +216,7 @@ def create_nodes(cloud_init_file:str=None, count:int=1):
                     print(f"failed to add dns entry: 'add_record('A', {node_name}, {node_ips[0]}, 1000)'")
 
 
-            node_ips = cloud.cloud.server_ip(node_id)
+            node_ips = cloud.server_ip(node_id)
 
             nodes[node_name] = {}
             nodes[node_name]['vm_id'] = node_id
@@ -225,6 +225,7 @@ def create_nodes(cloud_init_file:str=None, count:int=1):
 
 
     except Exception as e:
+        print(e)
         logger.warning("Could not create execute server")
         logger.debug("Error: {}".format(e))
         return

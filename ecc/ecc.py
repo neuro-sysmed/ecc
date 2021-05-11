@@ -315,8 +315,8 @@ ecc:
     #azure variables
     compute_group: FOR-NEURO-SYSMED-UTV-COMPUTE
     network_group: FOR-NEURO-SYSMED-UTV-NETWORK
-    virtual_network_name: FOR-NEURO-SYSMED-UTV-VNET
-    virtual_subnet_name:  WorkloadsSubnet
+    virtual_network: FOR-NEURO-SYSMED-UTV-VNET
+    virtual_subnet:  WorkloadsSubnet
     vm_size: Standard_D2_v2
     admin_username: root
     admin_password: <SECRET!>

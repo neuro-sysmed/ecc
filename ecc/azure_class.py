@@ -52,7 +52,7 @@ class Azure(object):
 
     def server_create(self, name: str, image: str, vm_size:str, 
                       network_group:str, compute_group:str, 
-                      virtual_network_name:str, virtual_subnet_name:str, 
+                      virtual_network:str, virtual_subnet:str, 
                       admin_username:str, admin_password:str,  **kwargs):
       #Done, needs testing and popping args in correctly      
 
@@ -65,7 +65,7 @@ class Azure(object):
                        'ip_configurations': [{
                         'name': f'{name}IPconfig',
                         'subnet': {
-                          'id': f"/subscriptions/{self._subscription_id}/resourceGroups/{network_group_name}/providers/Microsoft.Network/virtualNetworks/{virtual_network_name}/subnets/{subnet}",
+                          'id': f"/subscriptions/{self._subscription_id}/resourceGroups/{network_group}/providers/Microsoft.Network/virtualNetworks/{virtual_network}/subnets/{subnet}",
                         }}
                         ]
                       } 
@@ -108,7 +108,7 @@ class Azure(object):
                   },
                   "network_profile": {
                     "network_interfaces": [
-                      {"id": f"/subscriptions/{self._subscription_id}/resourceGroups/{network_group_name}/providers/Microsoft.Network/networkInterfaces/{interface_name}",
+                      {"id": f"/subscriptions/{self._subscription_id}/resourceGroups/{network_group}/providers/Microsoft.Network/networkInterfaces/{interface_name}",
                       "properties": {
                         "primary": True
                       }

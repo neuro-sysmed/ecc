@@ -184,8 +184,9 @@ def delete_nodes(ids:[]):
         logger.info('deleting VM...')
         cloud.server_delete( id )
 
-    logger.info('running playbook')
-    ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
+    if 'ansible_cmd' in config:
+        logger.info('running playbook')
+        ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
 
     return
 

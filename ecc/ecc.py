@@ -47,10 +47,10 @@ def openstack_connect(config):
     cloud = openstack_class.Openstack()
     cloud.connect(**config)
 
-def azure_connect(Subscription_Id):
+def azure_connect(config):
     global cloud
     cloud = azure_class.Azure()
-    cloud.connect(Subscription_Id)
+    cloud.connect(config.subscription_id)
 
 
 def servers(filter:str=None):

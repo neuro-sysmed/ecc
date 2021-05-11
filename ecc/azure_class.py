@@ -34,9 +34,9 @@ class Azure(object):
         self._backend = "azure"
         self._connection = None
 
-    def id_to_dict(id:str) -> {}:
+    def id_to_dict(self, id:str) -> {}:
         res = {}
-        fields = vm_general.id.split("/")
+        fields = id.split("/")
         for i in range(1, len(fields), 2):
           res[ fields[i] ] = fields[i+1]
         
@@ -150,7 +150,7 @@ class Azure(object):
               power_state = v
             elif k == 'ProvisioningState':
               provisioning_state = v
-          ips = = self.server_ip(vm.id)
+          ips = self.server_ip(vm.id)
 
           servers.append({'id': vm.id, 'name': vm.name.lower(), 'status': power_state, 'ips': ips})
           

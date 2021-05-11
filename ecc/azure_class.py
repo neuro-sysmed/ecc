@@ -65,7 +65,7 @@ class Azure(object):
                        'ip_configurations': [{
                         'name': f'{name}IPconfig',
                         'subnet': {
-                          'id': f"/subscriptions/{self._subscription_id}/resourceGroups/{network_group}/providers/Microsoft.Network/virtualNetworks/{virtual_network}/subnets/{subnet}",
+                          'id': f"/subscriptions/{self._subscription_id}/resourceGroups/{network_group}/providers/Microsoft.Network/virtualNetworks/{virtual_network}/subnets/{virtual_subnet}",
                         }}
                         ]
                       } 

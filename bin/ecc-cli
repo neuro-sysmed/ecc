@@ -58,7 +58,7 @@ def add_vms(commands):
     if len(commands) == 0:
         commands.append(1)
 
-    count = int(args_utils.get_or_default(commands, 1))
+    count = args_utils.get_or_default(commands, 1)
     try:
         ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=int(count))
     except:

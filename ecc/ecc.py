@@ -208,16 +208,15 @@ def create_nodes(cloud_init_file:str=None, count:int=1):
                                            userdata_file=cloud_init_file,
                                            **config.ecc )
 
-            logger.debug("Execute server {}/{} is vm_booting".format( node_id, node_name))
-            # This is a blocking call, so will hang here till the server is online.
-            cloud.wait_for_log_entry(node_id)
-            node_ips = cloud.cloud.server_ip(node_id)
 
             if 'cloudflare' in config.ecc:
                 try:
                     cloudflare_utils.add_record('A', node_name, node_ips[0], 1000)
                 except:
                     print(f"failed to add dns entry: 'add_record('A', {node_name}, {node_ips[0]}, 1000)'")
+
+
+            node_ips = cloud.cloud.server_ip(node_id)
 
             nodes[node_name] = {}
             nodes[node_name]['vm_id'] = node_id

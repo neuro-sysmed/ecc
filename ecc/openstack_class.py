@@ -144,6 +144,11 @@ class Openstack(object):
             print(e)
             raise e
 
+        logger.debug("Execute server {}/{} is vm_booting".format( node_id, node_name))
+        # This is a blocking call, so will hang here till the server is online.
+        wait_for_log_entry(node_id)
+
+
     def servers(self):
 
         servers = []

@@ -50,7 +50,10 @@ class Azure(object):
 
         logger.debug("Connected to openstack server")
 
-    def server_create(self, name: str, image: str, vm_size:str, **kwargs):
+    def server_create(self, name: str, image: str, vm_size:str, 
+                      network_group:str, compute_group:str, 
+                      virtual_network_name:str, virtual_subnet_name:str, 
+                      admin_username:str, admin_password:str,  **kwargs):
       #Done, needs testing and popping args in correctly      
 
       interface_name = f"{name}-eth0"

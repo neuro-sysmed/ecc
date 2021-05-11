@@ -271,7 +271,7 @@ def next_id(names, regex:str=None) -> int:
     return ids[ -1 ] + 1
 
 def write_config_file(filename:str='ecc.yml') -> None:
-    if os.path.isfile( args.create_config ):
+    if os.path.isfile( filename ):
         raise RuntimeError('Config file already exists, please rename before creating a new one')
 
     config = '''

@@ -23,6 +23,7 @@ from azure.common.credentials import ServicePrincipalCredentials
 
 
 import kbr.log_utils as logger
+import kbr.file_utils as file_utils
 
 
 
@@ -62,7 +63,7 @@ class Azure(object):
     def server_create(self, name: str, image: str, vm_size:str, 
                       network_group:str, compute_group:str, 
                       virtual_network:str, virtual_subnet:str, 
-                      admin_username:str, admin_password:str,  **kwargs):
+                      admin_username:str, admin_password:str, ssh_key:str=None, **kwargs):
       #Done, needs testing and popping args in correctly      
 
       interface_name = f"{name}-eth0"
@@ -113,7 +114,16 @@ class Azure(object):
                   "os_profile": {
                     "admin_username": admin_username,
                     "admin_password": admin_password,
-                    "computer_name": f"{name}"
+                    "computer_name": f"{name}",
+                    "linuxConfiguration": {
+                      "ssh": {
+                        "publicKeys": [
+                            {"path": f"/home/{admin_username}/.ssh/authorized_keys",
+                             "keyData": f"{ssh_key}"
+                            }
+                        ]
+                      },
+                    }
                   },
                   "network_profile": {
                     "network_interfaces": [

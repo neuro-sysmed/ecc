@@ -231,11 +231,12 @@ def create_nodes(cloud_init_file:str=None, count:int=1):
         logger.debug("Error: {}".format(e))
         return
 
-    try:
-        ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
-    except:
-        print(f"failed to run playbook: 'run_playbook({config.ecc.ansible_cmd}, host={node_ips[0]}, cwd={config.ecc.ansible_dir})'")
-        return
+    if 'ansible_cmd' in config:
+        try:
+            ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
+        except:
+            print(f"failed to run playbook: 'run_playbook({config.ecc.ansible_cmd}, host={node_ips[0]}, cwd={config.ecc.ansible_dir})'")
+            return
 
     return node_name
 

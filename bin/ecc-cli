@@ -60,7 +60,7 @@ def add_vms(commands):
 
     count = args_utils.get_or_default(commands, 1)
     try:
-        ecc.create_nodes(cloud_init_file=config.ecc.get(cloud_init, None), count=int(count))
+        ecc.create_nodes(cloud_init_file=config.ecc.get('cloud_init', None), count=int(count))
     except Exception as e:
         print(e )
         if count != 'help':

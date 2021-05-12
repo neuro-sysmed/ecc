@@ -63,7 +63,7 @@ class Azure(object):
     def server_create(self, name: str, image: str, vm_size:str, 
                       network_group:str, compute_group:str, 
                       virtual_network:str, virtual_subnet:str, 
-                      admin_username:str, admin_password:str, ssh_key:str , **kwargs):
+                      admin_username:str, admin_password:str, ssh_key:str , image:str=None, **kwargs):
       #Done, needs testing and popping args in correctly      
 
       interface_name = f"{name}-eth0"
@@ -84,10 +84,7 @@ class Azure(object):
 
       print( network_interface )
 
-      vm = self._compute_client.virtual_machines.begin_create_or_update(
-                compute_group,
-                name,
-                { "location": "westeurope",
+      vm_config = { "location": "westeurope",
                   "hardware_profile": {
                     "vm_size": vm_size
                   },
@@ -136,6 +133,14 @@ class Azure(object):
                   ]
                 }
               }
+
+      if image is not None:
+        vm_config['storage_profile']['image_reference'] = {'id': image}
+
+      vm = self._compute_client.virtual_machines.begin_create_or_update(
+                compute_group,
+                name,
+                vm_config
           ).result()
 
       return vm.id

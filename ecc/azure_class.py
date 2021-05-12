@@ -60,7 +60,7 @@ class Azure(object):
 
         logger.debug("Connected to openstack server")
 
-    def server_create(self, name: str, image: str, vm_size:str, 
+    def server_create(self, name: str, vm_size:str, 
                       network_group:str, compute_group:str, 
                       virtual_network:str, virtual_subnet:str, 
                       admin_username:str, admin_password:str, ssh_key:str , image:str=None, **kwargs):

@@ -97,7 +97,7 @@ class Azure(object):
                   "storage_profile": {
                     "image_reference": {
                       #? "id": "/subscriptions/5a9e26a0-6897-44d6-963e-fae2a2061f27/resourceGroups/FOR-NEURO-SYSMED-UTV-COMPUTE/providers/Microsoft.Compute/images/circ-rna-v1-img"
-                      "sku": "8_3",
+                      "sku": "8_2",
                       "publisher": "Openlogic",
                       "version": "latest",
                       "offer": "centos"
@@ -214,7 +214,7 @@ class Azure(object):
           self._network_client.network_interfaces.begin_delete(network_dict['resourceGroups'], network_dict['networkInterfaces'])
 
         os_disk_name = vm.storage_profile.os_disk.name 
-        self._cluster.compute_client.disks.begin_delete(vm_dict['resourceGroups'], os_disk_name)
+        self._compute_client.disks.begin_delete(vm_dict['resourceGroups'], os_disk_name)
 
 
 

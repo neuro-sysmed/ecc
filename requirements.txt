@@ -1,4 +1,4 @@
-kbr@git+https://github.com/brugger/kbr-tools.git
+git+https://github.com/brugger/kbr-tools.git
 munch
 openstacksdk
 cloudflare

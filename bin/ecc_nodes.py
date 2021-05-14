@@ -13,10 +13,7 @@ import pprint as pp
 
 
 import argparse
-try:
-    import json
-except ImportError:
-    import simplejson as json
+import json
 
 def file_dir(filename:str=None) -> str:
     if filename is None:
@@ -36,7 +33,7 @@ import ecc
 import ecc.utils
 
 
-def readin_inventory(ansible_dir:str) -> {}:
+def readin_inventory(ansible_dir:str) -> dict:
 
     inventory = f"{ansible_dir}/hosts   "
 

@@ -35,7 +35,7 @@ class Azure(object):
         self._backend = "azure"
         self._connection = None
 
-    def id_to_dict(self, id:str) -> {}:
+    def id_to_dict(self, id:str) -> dict:
         res = {}
         fields = id.split("/")
         for i in range(1, len(fields), 2):
@@ -63,7 +63,7 @@ class Azure(object):
     def server_create(self, name: str, vm_size:str, 
                       network_group:str, compute_group:str, 
                       virtual_network:str, virtual_subnet:str, 
-                      admin_username:str, admin_password:str, ssh_key:str , image:str=None, **kwargs):
+                      admin_username:str, admin_password:str, ssh_key:str , image:str=None, **kwargs) -> None:
       #Done, needs testing and popping args in correctly      
 
       interface_name = f"{name}-eth0"
@@ -198,7 +198,7 @@ class Azure(object):
         return ips
 
 
-    def server_names(self) -> []: # done
+    def server_names(self) -> list: # done
         names = []
         for server in self.servers():
             names.append(server['name'])
@@ -226,16 +226,16 @@ class Azure(object):
     def server_stop(self, id: str, compute_group:str, **kwargs): # done, needs testing
         """ stops a server """
 
-        self._compute_client.virtual_machines.power_off(compute_group, id)
+        self._compute_client.virtual_machines.power_off(compute_group, id).result()
 
-        logger.debug("Suspended server id:{}".format(id))
+        logger.debug("Stopped server id:{}".format(id))
 
 
     def get_images(self, compute_group:str, name:str=None, **kwargs):
 
         images = []
-        for image in self._compute_client. _connection.image.images.list():
-            if active and image.status != "active":
+        for image in self._compute_client.images.list():
+            if image.status != "active":
                 continue
 
             if (name is not None and

@@ -58,7 +58,7 @@ class Azure(object):
         self._compute_client  = ComputeManagementClient(self._credential, Subscription_Id)
         self._network_client  = NetworkManagementClient(self._credential, Subscription_Id)
 
-        logger.debug("Connected to openstack server")
+        logger.debug("Connected to azure cloud")
 
     def server_create(self, name: str, vm_size:str, 
                       network_group:str, compute_group:str, 

@@ -36,12 +36,6 @@ import ecc
 import ecc.utils
 
 
-
-
-
-
-
-
 def readin_inventory(ansible_dir:str) -> {}:
 
     inventory = f"{ansible_dir}/hosts   "

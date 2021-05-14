@@ -10,8 +10,11 @@ def get_version():
     with open('version.json') as json_file:
         data = json.load(json_file)
 
-    if 'dev' in data:
+    if 'dev' in data and data['dev']:
         return "{}.{}.{}-dev{}".format( data['major'], data['minor'], data['patch'], data['dev'])
+
+    if 'rc' in data and data['rc']:
+        return "{}.{}.{}-rc{}".format( data['major'], data['minor'], data['patch'], data['rc'])
 
     return "{}.{}.{}".format( data['major'], data['minor'], data['patch'])
 
@@ -23,9 +26,15 @@ def get_requirements():
     return data.split("\n")
 
 
-def scripts(directory='bin/*') -> []:
-    print(glob.glob( directory ))
-    return list(glob.glob( directory ))
+def get_scripts(directory='bin') -> list:
+    files = []
+    for (path, directories, filenames) in os.walk(directory):
+        for filename in filenames:
+            if filename.endswith("~") or filename.endswith("__"):
+                continue
+            files.append(os.path.join(path, filename))
+#    print( paths )
+    return files
 
 
 

@@ -104,7 +104,7 @@ def nodes():
     return nodes
 
 
-def node_names() -> []:
+def node_names() -> list:
     names = []
     for node in nodes():
         names.append(node['name'])
@@ -137,7 +137,7 @@ def _show_node(id:str) -> str:
 def node_state(id:str) -> str:
     info = _show_node(id)
     for line in info.split('\n'):
-        State=IDLE
+        State="IDLE"
         state = re.match(r'State=(w+)', line)
         print(state)
         if state:

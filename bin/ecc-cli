@@ -50,17 +50,13 @@ def init(args):
         logger.info(f'{program_name} (v:{version})')
 
 
-
-
-
-
 def add_vms(commands):
     if len(commands) == 0:
         commands.append(1)
 
     count = args_utils.get_or_default(commands, 1)
     try:
-        ecc.create_nodes(cloud_init_file=config.ecc.get('cloud_init', None), count=int(count))
+        ecc.create_nodes(cloud_init_file=config.ecc.get('cloud_init', None), count=int(count), hostnames=commands)
     except Exception as e:
         print( e )
         if count != 'help':
@@ -69,11 +65,11 @@ def add_vms(commands):
 
         print("Help:")
         print("==========================")
-        print(f"{program_name} create [number, default=1]")
+        print(f"{program_name} create [number, default=1] [hostname]")
 
 
 
-def delete_vms(ids: []):
+def delete_vms(ids: list):
     if 'help' in ids:
         print("Help:")
         print("==========================")

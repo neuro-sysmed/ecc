@@ -193,7 +193,7 @@ def delete_nodes(ids:[]):
 
 
 
-def create_nodes(cloud_init_file:str=None, count:int=1):
+def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[]):
 
 
 #    resources = openstack.get_resources_available()
@@ -202,7 +202,11 @@ def create_nodes(cloud_init_file:str=None, count:int=1):
     try:
         for _ in range(0, count):
             node_id = next_id(names=cloud.server_names())
-            node_name = config.ecc.name_template.format( node_id)
+            if len(hostnames):
+                node_name = hostnames.pop(0)
+            else:
+                node_name = config.ecc.name_template.format( node_id)
+                
             print(f"creating node with name {node_name}")
 
             node_id = cloud.server_create( name=node_name,

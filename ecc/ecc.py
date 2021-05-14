@@ -9,7 +9,6 @@ import sys
 import os
 import re
 import pprint
-from ecc.utils import make_node_name
 
 pp = pprint.PrettyPrinter(indent=4)
 import random
@@ -23,6 +22,7 @@ import ecc.slurm_utils as slurm_utils
 import ecc.utils as ecc_utils
 import ecc.ansible_utils as ansible_utils
 import ecc.cloudflare_utils as cloudflare_utils
+from ecc.utils import make_node_name
 
 # Not sure if this is still needed.
 import logging
@@ -166,7 +166,7 @@ def delete_node(ids:str):
     return delete_nodes( ids )
 
 
-def delete_nodes(ids:[]):
+def delete_nodes(ids:list):
 
     if not isinstance( ids, list):
         ids = [ids]
@@ -201,12 +201,12 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[]):
 
     try:
         for _ in range(0, count):
-            node_id = next_id(names=cloud.server_names())
             if len(hostnames):
                 node_name = hostnames.pop(0)
             else:
+                node_id = next_id(names=cloud.server_names())
                 node_name = config.ecc.name_template.format( node_id)
-                
+
             print(f"creating node with name {node_name}")
 
             node_id = cloud.server_create( name=node_name,
@@ -230,7 +230,6 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[]):
 
 
     except Exception as e:
-        print(e)
         logger.warning("Could not create execute server")
         logger.debug("Error: {}".format(e))
         return

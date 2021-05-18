@@ -57,6 +57,8 @@ def add_vms(commands):
     count = 1 
     if len(commands) and isinstance(commands[0], int):
         count = commands.pop(0)
+    else:
+        count = len(commands)
 
 #    count = args_utils.get_or_default(commands, 1)
     try:

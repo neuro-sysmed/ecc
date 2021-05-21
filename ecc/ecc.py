@@ -126,7 +126,7 @@ def nodes_idle(update:bool=False):
     count = 0
     for node in nodes:
         node = nodes[ node ]
-        if node.get('slurm_state', None) == 'idle' and node.get('vm_state', None) == 'active':
+        if node.get('slurm_state', None) == 'idle' and node.get('vm_state', None) in ['active', 'running']:
             count += 1
 
     return count
@@ -140,7 +140,7 @@ def nodes_total(update:bool=False):
     count = 0
     for node in nodes:
         node = nodes[ node ]
-        if node.get('slurm_state', None) in ['mix', 'idle', 'alloc'] and node.get('vm_state', None) == 'active':
+        if node.get('slurm_state', None) in ['mix', 'idle', 'alloc'] and node.get('vm_state', None) in ['active', 'running']:
             count += 1
 
     return count
@@ -184,7 +184,7 @@ def delete_nodes(ids:list):
         logger.info('deleting VM...')
         cloud.server_delete( id )
 
-    if 'ansible_cmd' in config:
+    if 'ansible_cmd' in config.ecc:
         logger.info('running playbook')
         ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
 
@@ -234,7 +234,7 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[]):
         logger.debug("Error: {}".format(e))
         return
 
-    if 'ansible_cmd' in config:
+    if 'ansible_cmd' in config.ecc:
         try:
             ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
         except:

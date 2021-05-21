@@ -1,4 +1,4 @@
-#!/home/brugger/projects/usegalaxy/ecc/venv/bin/python3
+#!/cluster/lib/ecc/venv/bin/python
 # !/bin/env python3
 #
 #
@@ -79,10 +79,10 @@ def main():
 #    parser.add_argument('config_file', metavar='config-file', nargs="*", help="yaml formatted config file",
 #                        default=ecc.utils.find_config_file('ecc.yaml'))
     parser.add_argument('config_file', metavar='config-file', nargs="*", help="yaml formatted config file",
-                        default='ecc.yaml')
+                        default='/cluster/lib/ecc/ecc.yaml')
     parser.add_argument('--list', action='store_true') # expected by ansible
-    parser.add_argument('-H','--host-group', default='slurm', help='host group to put the nodes in') # expected by ansible
-    parser.add_argument('-u','--ansible-user', default='centos', help='host group to put the nodes in') # expected by ansible
+    parser.add_argument('-H','--host-group', default='node', help='host group to put the nodes in') # expected by ansible
+    parser.add_argument('-u','--ansible-user', default='sysadmin', help='host group to put the nodes in') # expected by ansible
     parser.add_argument('-t','--trusted-host', default='yes', help='host group to put the nodes in') # expected by ansible
 
     args = parser.parse_args()
@@ -97,7 +97,13 @@ def main():
     hosts = readin_inventory(config.ecc.ansible_dir)
 
     config.ecc.name_regex = config.ecc.name_template.format("([01-99])")
-    ecc.openstack_connect(config.openstack)
+    if 'openstack' in config:
+        ecc.openstack_connect(config.openstack)
+    elif 'azure' in config:
+        ecc.azure_connect( config.azure )
+    else:
+        print('No backend configured, options are: openstack and azure')
+
     nodes = ecc.servers(config.ecc.name_regex)
 
 

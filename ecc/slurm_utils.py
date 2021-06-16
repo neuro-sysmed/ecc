@@ -161,12 +161,10 @@ def node_cpu_info(id:str) -> dict:
 
 
 def free_resources():
-    nodes = nodes()
-
     cpus_total = 0
     cpus_free  = 0
 
-    for node in nodes:
+    for node in nodes():
         cpu_free, cpu_total  = node_cpu_info( node['id'])
 
         cpus_free  += cpu_free

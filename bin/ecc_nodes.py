@@ -26,6 +26,7 @@ sys.path.append(file_dir() +'/../')
 
 
 import kbr.config_utils as config_utils
+import kbr.args_utils as args_utils
 import kbr.log_utils as logger
 
 
@@ -79,7 +80,7 @@ def main():
 #    parser.add_argument('config_file', metavar='config-file', nargs="*", help="yaml formatted config file",
 #                        default=ecc.utils.find_config_file('ecc.yaml'))
     parser.add_argument('config_file', metavar='config-file', nargs="*", help="yaml formatted config file",
-                        default='/cluster/lib/ecc/ecc.yaml')
+                        default=args_utils.get_env_var('ECC_CONF','ecc.yaml'))
     parser.add_argument('--list', action='store_true') # expected by ansible
     parser.add_argument('-H','--host-group', default='node', help='host group to put the nodes in') # expected by ansible
     parser.add_argument('-u','--ansible-user', default='sysadmin', help='host group to put the nodes in') # expected by ansible

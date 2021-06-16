@@ -1,6 +1,7 @@
 from setuptools import setup
 import json
 import glob
+import os
 
 def readme():
     with open('README.rst') as f:
@@ -51,5 +52,5 @@ setup(name='ecc',
         'Programming Language :: Python :: +3.6'
         ],
       install_requires=[ get_requirements() ],
-      scripts=scripts(),
+      scripts=get_scripts(),
 )

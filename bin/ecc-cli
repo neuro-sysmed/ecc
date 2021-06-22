@@ -13,6 +13,7 @@ import kbr.version_utils as version_utils
 import kbr.args_utils as args_utils
 import kbr.string_utils as string_utils
 import kbr.file_utils as file_utils
+import kbr.type_utils as type_utils
 
 sys.path.append(".")
 
@@ -55,7 +56,7 @@ def add_vms(commands):
         commands.append(1)
 
     count = 1 
-    if len(commands) and isinstance(commands[0], int):
+    if len(commands) and type_utils.is_int(commands[0]):
         count = commands.pop(0)
     else:
         count = len(commands)

@@ -161,7 +161,8 @@ class Azure(object):
           power_state = "unknown"
           provisioning_state = "unknown"
           for stat in vm.instance_view.statuses:
-            k,v = stat.code.split("/")
+            f = stat.code.split("/")
+            k,v = f[0], f[1]
             if k == 'PowerState':
               power_state = v
             elif k == 'ProvisioningState':

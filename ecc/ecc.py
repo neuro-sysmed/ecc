@@ -198,6 +198,7 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[]):
 
 #    resources = openstack.get_resources_available()
     global nodes
+    created_nodes = []
 
     try:
         for _ in range(0, count):
@@ -227,6 +228,8 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[]):
             nodes[node_name]['vm_id'] = node_id
             nodes[node_name]['vm_state'] = 'booting'
             nodes[node_name] = node_ips
+            
+            create_nodes.append(node_name)
 
 
     except Exception as e:
@@ -240,6 +243,10 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[]):
         except:
             print(f"failed to run playbook: 'run_playbook({config.ecc.ansible_cmd}, host={node_ips[0]}, cwd={config.ecc.ansible_dir})'")
             return
+    
+    for n in create_nodes:
+        slurm_utils.update_node_state( n, "resume")
+
 
     return node_name
 

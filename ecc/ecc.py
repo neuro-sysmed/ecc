@@ -158,7 +158,7 @@ def delete_node(ids:str):
     return delete_nodes( ids )
 
 
-def delete_nodes(ids:[]):
+def delete_nodes(ids:list):
 
     if not isinstance( ids, list):
         ids = [ids]
@@ -257,45 +257,4 @@ def next_id(names, regex:str=None) -> int:
             return ids[ i ] + 1
 
     return ids[ -1 ] + 1
-
-def write_config_file(filename:str='ecc.yml') -> None:
-    if os.path.isfile( args.create_config ):
-        raise RuntimeError('Config file already exists, please rename before creating a new one')
-
-    config = '''
-openstack:
-    auth_url: <AUTH URL>
-    password: <PASSWORD>
-    project_domain_name: <PROJECT DOMAIN>
-    project_name: <PROJECT NAME>
-    region_name: <REGION>
-    user_domain_name: <USER DOMAIN>
-    username: <USER EMAIL>
-
-ecc:
-    log: ecc.log
-    nodes_max: 6
-    nodes_min: 1
-    nodes_spare: 1
-    sleep: 30
-
-    flavor: m1.medium
-    image: GOLD CentOS 7
-    key: <SSHKEY>
-    network: dualStack
-    security_groups: slurm-node
-    name_template: "ecc{}.usegalaxy.no"
-    cloud_init: <PATH>/ecc_node.yaml
-    ansible_dir: <PATH, eg: /usr/local/ansible/infrastructure-playbook/env/test>
-    ansible_cmd: "<CMD, EG: ./venv/bin/ansible-playbook -i ecc_nodes.py slurm.yml"
-
-    cloudflare_apikey: <API KEY>
-    cloudflare_email: <EMAIL>'''
-
-
-    with open(filename, 'w') as outfile:
-        outfile.write(config)
-        outfile.close()
-
-    return None
 

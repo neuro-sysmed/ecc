@@ -50,6 +50,46 @@ def jobs_pending():
 
     return count
 
+def pending_time() -> dict:
+    #STATE               PENDING_TIME        
+    #PENDING             2454                
+    #RUNNING             2451    
+
+
+    cmd = "squeue -squeue -O state,pendingtime -h"
+
+    run = run_utils.launch_cmd( cmd )
+
+    run = run.stdout
+    if run == b'':
+        return []
+
+    run = run.decode('utf-8')
+    pending_times = []
+    all_pending_times = []
+    for line in run.split("\n"):
+        if line == '':
+            continue
+        fields = line.split()
+        all_pending_times.append( int( fields[1]))
+        if fields[0] == 'PENDING':
+            pending_times.append( int( fields[1]))
+
+    max_wait = max(pending_times)
+    pending_wait  = len(pending_times)
+    avg_wait = -1
+    if pending_wait > 0:
+        avg_wait = sum( pending_times)/pending_wait
+
+    all_wait = len(all_pending_times)
+    all_avg_wait = -1
+    if all_wait > 0:
+        all_avg_wait = sum( all_pending_times)/all_wait
+
+    return {'max':max_wait, 'pending': pending_wait, 'pending_mean': avg_wait, 'all_mean': all_avg_wait}
+
+
+
 def jobs_running():
     count = 0
     for job in jobs():

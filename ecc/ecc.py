@@ -188,6 +188,10 @@ def delete_nodes(ids:list=[], count:int=None) -> None:
     for id in ids:
         if id is None:
             continue 
+        
+        if id in nodes:
+            id = nodes[id]['vm_id']
+
         logger.info("deleting node {}".format( id ))
         vm = openstack.server( id )
 

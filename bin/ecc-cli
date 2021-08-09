@@ -97,14 +97,18 @@ def add_vms(commands):
     ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=int(count))
 
 
-def delete_vms(ids: []):
+def delete_vms(ids: list):
     if 'help' in ids:
         print("Help:")
         print("==========================")
         print(f"{program_name} delete [number, default=1]")
         return
 
-    ecc.delete_nodes(ids)
+    try:
+        count = int(ids[0])
+        ecc.delete_nodes(count=count)
+    except:
+        ecc.delete_nodes(ids)
 
 
 def list_vms(commands):

@@ -70,6 +70,7 @@ def servers(filter:str=None):
 
 
 def update_nodes_status() -> None:
+    
     vnodes = servers(config.ecc.name_regex)
     snodes = slurm_utils.nodes()
 

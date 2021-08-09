@@ -6,6 +6,7 @@
 
 import pprint
 import sys
+import os
 
 pp = pprint.PrettyPrinter(indent=4)
 import time
@@ -14,6 +15,7 @@ from munch import Munch
 
 import kbr.config_utils as config_utils
 import kbr.log_utils as logger
+import kbr.args_utils as args_utils
 import kbr.version_utils as version_utils
 
 sys.path.append(".")
@@ -32,15 +34,22 @@ IDLE_TIME = 300
 
 def init(args):
     global config
-    if args.config:
-        config = config_utils.readin_config_file(args.config[0])
+    if args.config and os.path.isfile( args.config ):
+        config = config_utils.readin_config_file(args.config)
         logger.init(name=program_name, log_file=config.ecc.get('logfile', None))
         logger.set_log_level(args.verbose)
         logger.info(f'{program_name} (v:{version})')
         config.ecc.name_regex = config.ecc.name_template.format("(\d+)")
         ecc.set_config(config)
-        ecc.openstack_connect(config.openstack)
-        cloudflare_utils.init(config.ecc.cloudflare_apikey, config.ecc.cloudflare_email)
+        if 'openstack' in config:
+            ecc.openstack_connect(config.openstack)
+        elif 'azure' in config:
+            ecc.azure_connect( config.azure )
+        else:
+            print('No backend configured, options are: openstack and azure')
+        
+        if 'cloudflare' in config.ecc:
+            cloudflare_utils.init(config.ecc.cloudflare_apikey, config.ecc.cloudflare_email)
     else:
         logger.init(name=program_name)
         logger.set_log_level(args.verbose)
@@ -70,7 +79,7 @@ def run_daemon() -> None:
             logger.info("We are below the min number of nodes, creating {} nodes".format(
                 config.ecc.nodes_min - nodes_total))
 
-            ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=config.ecc.nodes_min - nodes_total)
+            ecc.create_nodes(count=config.ecc.nodes_min - nodes_total)
 
         ### there are jobs queuing, let see what we should do
 
@@ -78,7 +87,7 @@ def run_daemon() -> None:
         if jobs_pending and pending_time['pending_mean'] >= IDLE_TIME and nodes_total <= int(config.ecc.nodes_max):
 
             logger.info("We got stuff to do and long pending times, creating an additional node...")
-            ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=1)
+            ecc.create_nodes(count=1)
 
         # We got extra nodes not needed and we can delete some without going under the min cutoff, so lets get rid of some
         elif nodes_idle:
@@ -101,7 +110,10 @@ def main():
     parser.add_argument('-l', '--logfile', default=None, help="Logfile to write to, default is stdout")
     parser.add_argument('-v', '--verbose', default=4, action="count", help="Increase the verbosity of logging output")
     parser.add_argument('config', metavar='config', nargs=1, help="yaml formatted config file",
-                        default=ecc.utils.find_config_file('ecc.yaml'))
+                        default=args_utils.get_env_var('ECC_CONF','ecc.yaml')) 
+
+    parser.add_argument('-c', '--config', help="ECC config file",
+                        default=args_utils.get_env_var('ECC_CONF','ecc.yaml')) 
 
     args = parser.parse_args()
     init(args)

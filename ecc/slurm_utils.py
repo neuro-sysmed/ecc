@@ -56,7 +56,7 @@ def pending_time() -> dict:
     #RUNNING             2451    
 
 
-    cmd = "squeue -squeue -O state,pendingtime -h"
+    cmd = "squeue -O state,pendingtime -h"
 
     run = run_utils.launch_cmd( cmd )
 

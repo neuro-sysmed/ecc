@@ -27,6 +27,8 @@ version = version_utils.as_string('ecc')
 config = None
 program_name = 'eccd'
 
+IDLE_TIME = 300
+
 
 def init(args):
     global config
@@ -56,10 +58,12 @@ def run_daemon() -> None:
         ecc.update_nodes_status()
 
         nodes_total = ecc.nodes_total()
-        nodes_idle = ecc.nodes_idle()
+        nodes_idle = ecc.nodes_idle_timelimit(limit=IDLE_TIME)
         jobs_pending = slurm_utils.jobs_pending()
+        pending_time = slurm_utils.pending_time()
 
-        print(f"nodes_total: {nodes_total}, nodes_idle: {nodes_idle}, jobs_pending: {jobs_pending}")
+        print(f"nodes_total: {nodes_total}, nodes_idle: {len(nodes_idle)}, jobs_pending: {jobs_pending}")
+
 
         # Below the min number of nodes needed for our setup
         if nodes_total < config.ecc.nodes_min:
@@ -71,14 +75,13 @@ def run_daemon() -> None:
         ### there are jobs queuing, let see what we should do
 
         # Got room to make some additional nodes
-        elif (jobs_pending and nodes_idle == 0 and nodes_total <= int(config.ecc.nodes_max)):
+        if jobs_pending and pending_time['pending_mean'] >= IDLE_TIME and nodes_total <= int(config.ecc.nodes_max):
 
-            logger.info("We got stuff to do, creating some additional nodes...")
-
+            logger.info("We got stuff to do and long pending times, creating an additional node...")
             ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=1)
 
         # We got extra nodes not needed and we can delete some without going under the min cutoff, so lets get rid of some
-        elif jobs_pending == 0 and nodes_idle and nodes_total > config.ecc.nodes_min:
+        elif nodes_idle:
 
             nr_of_nodes_to_delete = nodes_total - int(config.ecc.nodes_min)
 

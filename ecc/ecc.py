@@ -6,9 +6,9 @@
 # Kim Brugger (14 Sep 2018), contact: kim@brugger.dk
 
 import sys
+import os
 import re
 import pprint
-from ecc.utils import make_node_name
 
 pp = pprint.PrettyPrinter(indent=4)
 import random
@@ -17,10 +17,12 @@ from munch import Munch
 import kbr.log_utils as logger
 
 import ecc.openstack_class as openstack_class
+import ecc.azure_class as azure_class
 import ecc.slurm_utils as slurm_utils
 import ecc.utils as ecc_utils
 import ecc.ansible_utils as ansible_utils
 import ecc.cloudflare_utils as cloudflare_utils
+from ecc.utils import make_node_name
 
 # Not sure if this is still needed.
 import logging
@@ -32,7 +34,7 @@ logging.getLogger('openstack').setLevel(logging.CRITICAL)
 logging.getLogger('dogpile').setLevel(logging.CRITICAL)
 
 config = None
-openstack = None
+cloud = None
 nodes = {}
 
 def set_config(new_config:dict) -> None:
@@ -40,6 +42,7 @@ def set_config(new_config:dict) -> None:
     config = new_config
 
 
+<<<<<<< HEAD
 def openstack_connect(config) -> None:
     global openstack
     openstack = openstack_class.Openstack()
@@ -47,6 +50,21 @@ def openstack_connect(config) -> None:
 
 def servers(filter:str=None) -> list:
     servers = openstack.servers()
+=======
+def openstack_connect(config):
+    global cloud
+    cloud = openstack_class.Openstack()
+    cloud.connect(**config)
+
+def azure_connect(config):
+    global cloud
+    cloud = azure_class.Azure()
+    cloud.connect(config.subscription_id)
+
+
+def servers(filter:str=None):
+    servers = cloud.servers()
+>>>>>>> azure
 
     if filter:
         filter = re.compile(filter)
@@ -118,7 +136,7 @@ def nodes_idle(update:bool=False) -> int:
     count = 0
     for node in nodes:
         node = nodes[ node ]
-        if node.get('slurm_state', None) == 'idle' and node.get('vm_state', None) == 'active':
+        if node.get('slurm_state', None) == 'idle' and node.get('vm_state', None) in ['active', 'running']:
             count += 1
 
     return count
@@ -147,7 +165,7 @@ def nodes_total(update:bool=False) -> int:
     count = 0
     for node in nodes:
         node = nodes[ node ]
-        if node.get('slurm_state', None) in ['mix', 'idle', 'alloc'] and node.get('vm_state', None) == 'active':
+        if node.get('slurm_state', None) in ['mix', 'idle', 'alloc'] and node.get('vm_state', None) in ['active', 'running']:
             count += 1
 
     return count
@@ -172,6 +190,7 @@ def delete_node(ids:str) -> None:
     return delete_nodes( ids )
 
 
+<<<<<<< HEAD
 def delete_nodes(ids:list=[], count:int=None) -> None:
 
     if count is not None:
@@ -181,6 +200,9 @@ def delete_nodes(ids:list=[], count:int=None) -> None:
             count -= 1
             if count <= 0:
                 break
+=======
+def delete_nodes(ids:list):
+>>>>>>> azure
 
     if not isinstance( ids, list):
         ids = [ids]
@@ -193,50 +215,65 @@ def delete_nodes(ids:list=[], count:int=None) -> None:
             id = nodes[id]['vm_id']
 
         logger.info("deleting node {}".format( id ))
-        vm = openstack.server( id )
+        vm = cloud.server( id )
 
-        logger.info('deleting DNS entry...')
-        cloudflare_utils.purge_name( vm['name'])
+        if 'cloudflare' in config.ecc:
+            logger.info('deleting DNS entry...')
+            cloudflare_utils.purge_name( vm['name'])
+
         logger.info('deleting VM...')
-        openstack.server_delete( id )
+        cloud.server_delete( id )
 
-    logger.info('running playbook')
-    ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
+    if 'ansible_cmd' in config.ecc:
+        logger.info('running playbook')
+        ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
 
     return
 
 
 
 
+<<<<<<< HEAD
 def create_nodes(cloud_init_file:str=None, count=1) -> str:
+=======
+def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[]):
+>>>>>>> azure
 
 
 #    resources = openstack.get_resources_available()
     global nodes
+    created_nodes = []
 
     try:
         for _ in range(0, count):
-            node_id = next_id(names=openstack.server_names())
-            node_name = config.ecc.name_template.format( node_id)
+            if len(hostnames):
+                node_name = hostnames.pop(0)
+            else:
+                node_id = next_id(names=cloud.server_names())
+                node_name = config.ecc.name_template.format( node_id)
+
             print(f"creating node with name {node_name}")
 
-            node_id = openstack.server_create( name=node_name,
+            node_id = cloud.server_create( name=node_name,
                                            userdata_file=cloud_init_file,
                                            **config.ecc )
 
-            logger.debug("Execute server {}/{} is vm_booting".format( node_id, node_name))
-            # This is a blocking call, so will hang here till the server is online.
-            openstack.wait_for_log_entry(node_id)
-            node_ips = openstack.server_ip(node_id)
-            try:
-                cloudflare_utils.add_record('A', node_name, node_ips[0], 1000)
-            except:
-                print(f"failed to add dns entry: 'add_record('A', {node_name}, {node_ips[0]}, 1000)'")
+
+            if 'cloudflare' in config.ecc:
+                try:
+                    cloudflare_utils.add_record('A', node_name, node_ips[0], 1000)
+                except:
+                    print(f"failed to add dns entry: 'add_record('A', {node_name}, {node_ips[0]}, 1000)'")
+
+
+            node_ips = cloud.server_ip(node_id)
 
             nodes[node_name] = {}
             nodes[node_name]['vm_id'] = node_id
             nodes[node_name]['vm_state'] = 'booting'
             nodes[node_name] = node_ips
+            
+            create_nodes.append(node_name)
 
 
     except Exception as e:
@@ -244,11 +281,16 @@ def create_nodes(cloud_init_file:str=None, count=1) -> str:
         logger.debug("Error: {}".format(e))
         return
 
-    try:
-        ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
-    except:
-        print(f"failed to run playbook: 'run_playbook({config.ecc.ansible_cmd}, host={node_ips[0]}, cwd={config.ecc.ansible_dir})'")
-        return
+    if 'ansible_cmd' in config.ecc:
+        try:
+            ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
+        except:
+            print(f"failed to run playbook: 'run_playbook({config.ecc.ansible_cmd}, host={node_ips[0]}, cwd={config.ecc.ansible_dir})'")
+            return
+    
+    for n in create_nodes:
+        slurm_utils.update_node_state( n, "resume")
+
 
     return node_name
 
@@ -284,3 +326,67 @@ def next_id(names, regex:str=None) -> int:
 
     return ids[ -1 ] + 1
 
+<<<<<<< HEAD
+=======
+def write_config_file(filename:str='ecc.yaml') -> None:
+    if os.path.isfile( filename ):
+        raise RuntimeError('Config file already exists, please rename before creating a new one')
+
+    config = '''
+openstack:
+    auth_url: https://api.uh-iaas.no:5000/v3
+    password: <PASSWORD>
+    project_domain_name: dataporten
+    project_name: elixir-nrec-prod-backend
+    region_name: bgo
+    user_domain_name: dataporten
+    username: <USERNAME>
+
+azure:
+    subscription_id: <SUBSCRIPTION ID>    
+
+ecc:
+    log: ecc.log
+    nodes_max: 6
+    nodes_min: 1
+    nodes_spare: 1
+    sleep: 30
+    name_template: "ecc{}.usegalaxy.no"
+
+    image: GOLD CentOS 7
+    cloud_init: <PATH>/ecc_node.yaml
+    ansible_dir: <PATH, eg: /usr/local/ansible/infrastructure-playbook/env/test>
+    ansible_cmd: "<CMD, EG: ./venv/bin/ansible-playbook -i ecc_nodes.py slurm.yml"
+
+    # If doing DNS for nodes
+    cloudflare_apikey: <API KEY>
+    cloudflare_email: <EMAIL>
+
+
+    # openstack variables
+    flavor: m1.medium
+    key: <SSHKEY>
+    network: dualStack
+    security_groups: slurm-node
+
+    
+    #azure variables
+    compute_group: FOR-NEURO-SYSMED-UTV-COMPUTE
+    network_group: FOR-NEURO-SYSMED-UTV-NETWORK
+    virtual_network: FOR-NEURO-SYSMED-UTV-VNET
+    virtual_subnet:  WorkloadsSubnet
+    vm_size: Standard_D2_v2
+    admin_username: root
+    admin_password: <SECRET!>
+    
+    '''
+
+    #
+
+    with open(filename, 'w') as outfile:
+        outfile.write(config)
+        outfile.close()
+
+    return None
+
+>>>>>>> azure

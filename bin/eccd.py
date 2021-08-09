@@ -6,6 +6,7 @@
 
 import pprint
 import sys
+import os
 
 pp = pprint.PrettyPrinter(indent=4)
 import time
@@ -30,15 +31,22 @@ program_name = 'eccd'
 
 def init(args):
     global config
-    if args.config:
+    if args.config and os.path.isfile( args.config[0] ):
         config = config_utils.readin_config_file(args.config[0])
         logger.init(name=program_name, log_file=config.ecc.get('logfile', None))
         logger.set_log_level(args.verbose)
         logger.info(f'{program_name} (v:{version})')
         config.ecc.name_regex = config.ecc.name_template.format("(\d+)")
         ecc.set_config(config)
-        ecc.openstack_connect(config.openstack)
-        cloudflare_utils.init(config.ecc.cloudflare_apikey, config.ecc.cloudflare_email)
+        if 'openstack' in config:
+            ecc.openstack_connect(config.openstack)
+        elif 'azure' in config:
+            ecc.azure_connect( config.azure )
+        else:
+            print('No backend configured, options are: openstack and azure')
+        
+        if 'cloudflare' in config.ecc:
+            cloudflare_utils.init(config.ecc.cloudflare_apikey, config.ecc.cloudflare_email)
     else:
         logger.init(name=program_name)
         logger.set_log_level(args.verbose)

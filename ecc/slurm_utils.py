@@ -117,7 +117,10 @@ def nodes():
     #usegalaxy_production*    up   infinite      1   idle nrec2.usegalaxy.no
     #State of the nodes.  Possible states include: allocated, completing, down, drained, draining, fail, failing, future, idle, maint, mixed, perfctrs, power_down, power_up, reserved, and unknown plus Their abbreviated forms: alloc, comp, down, drain, drng, fail, failg, futr, idle, maint, mix, npc,  pow_dn,  pow_up,
     #               resv, and unk respectively.  Note that the suffix "*" identifies nodes that are presently not responding.
-    cmd = "sinfo -h"
+    #ecc-large-3      1    azure* idle* 
+    #ecc-node-1       1    azure* idle  
+    #ecc-node-2       1    azure* down* 
+    cmd = "sinfo -Nh"
 
     run = run_utils.launch_cmd( cmd )
 
@@ -134,8 +137,9 @@ def nodes():
         if line == '':
             continue
         fields = line.split()
-        for node in fields[5].split(","):
-            nodes.append( {'name':node, 'avail': fields[2], "state": fields[4]})
+        nodes.append({'name':fields[0], 'avail': fields[1], "state": fields[3]})
+#        for node in fields[5].split(","):
+#            nodes.append( {'name':node, 'avail': fields[2], "state": fields[4]})
 
     return nodes
 

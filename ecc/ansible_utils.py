@@ -1,6 +1,7 @@
 
 import json
 import pprint as pp
+import os
 
 import kbr.run_utils as run_utils
 
@@ -20,7 +21,7 @@ def run_playbook(cmd:str, cwd:str=None):
     cmd = f"ANSIBLE_STDOUT_CALLBACK=ansible.posix.json ANSIBLE_HOST_KEY_CHECKING=False {cmd}"
 
 #    print(cwd, cmd)
-    r = run_utils.launch_cmd(cmd, cwd=cwd)
+    r = run_utils.launch_cmd(cmd, cwd=cwd, use_shell_env=True)
 
     # the playbook failed!
     if r.p_status != 0:

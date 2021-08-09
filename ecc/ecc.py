@@ -35,17 +35,17 @@ config = None
 openstack = None
 nodes = {}
 
-def set_config(new_config:dict):
+def set_config(new_config:dict) -> None:
     global config
     config = new_config
 
 
-def openstack_connect(config):
+def openstack_connect(config) -> None:
     global openstack
     openstack = openstack_class.Openstack()
     openstack.connect(**config)
 
-def servers(filter:str=None):
+def servers(filter:str=None) -> list:
     servers = openstack.servers()
 
     if filter:
@@ -61,7 +61,7 @@ def servers(filter:str=None):
     return servers
 
 
-def update_nodes_status():
+def update_nodes_status() -> None:
     vnodes = servers(config.ecc.name_regex)
     snodes = slurm_utils.nodes()
 
@@ -101,7 +101,7 @@ def update_nodes_status():
 #    pp.pprint(nodes)
 
 
-def nodes_info(update:bool=True):
+def nodes_info(update:bool=True) -> list:
     if update:
         update_nodes_status()
 
@@ -110,7 +110,7 @@ def nodes_info(update:bool=True):
     return nodes
 
 
-def nodes_idle(update:bool=False):
+def nodes_idle(update:bool=False) -> int:
 
     if update:
         update_nodes_status()
@@ -123,8 +123,23 @@ def nodes_idle(update:bool=False):
 
     return count
 
+def nodes_idle_timelimit(update:bool=False, limit:int=300) -> list:
 
-def nodes_total(update:bool=False):
+    if update:
+        update_nodes_status()
+
+    idle_nodes = []
+    for node in nodes:
+        node = nodes[ node ]
+        if node.get('slurm_state', None) == 'idle' and node.get('vm_state', None) == 'active':
+            idle_time = node.timestamp - ecc_utils.timestamp()
+            if idle_time >= limit:
+                idle_nodes.append(n['vm_id'])
+
+    return idle_nodes
+
+
+def nodes_total(update:bool=False) -> int:
 
     if update:
         update_nodes_status()
@@ -138,10 +153,9 @@ def nodes_total(update:bool=False):
     return count
 
 
-def delete_idle_nodes(count:int=1):
+def delete_idle_nodes(count:int=1) -> None:
     """ Delete idle nodes, by default one node is vm_deleted
     """
-
 
     nodes = nodes_info().values()
     nodes_to_cull = []
@@ -153,12 +167,20 @@ def delete_idle_nodes(count:int=1):
     return
 
 
-def delete_node(ids:str):
+def delete_node(ids:str) -> None:
     # wrapper for the function below
     return delete_nodes( ids )
 
 
-def delete_nodes(ids:list):
+def delete_nodes(ids:list=[], count:int=None) -> None:
+
+    if count is not None:
+        idle_nodes = nodes_idle()
+        for idle_node in idle_nodes:
+            ids.append( idle_node['vm_id'])
+            count -= 1
+            if count <= 0:
+                break
 
     if not isinstance( ids, list):
         ids = [ids]
@@ -182,7 +204,7 @@ def delete_nodes(ids:list):
 
 
 
-def create_nodes(cloud_init_file:str=None, count=1):
+def create_nodes(cloud_init_file:str=None, count=1) -> str:
 
 
 #    resources = openstack.get_resources_available()

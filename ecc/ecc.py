@@ -42,15 +42,6 @@ def set_config(new_config:dict) -> None:
     config = new_config
 
 
-<<<<<<< HEAD
-def openstack_connect(config) -> None:
-    global openstack
-    openstack = openstack_class.Openstack()
-    openstack.connect(**config)
-
-def servers(filter:str=None) -> list:
-    servers = openstack.servers()
-=======
 def openstack_connect(config):
     global cloud
     cloud = openstack_class.Openstack()
@@ -64,7 +55,6 @@ def azure_connect(config):
 
 def servers(filter:str=None):
     servers = cloud.servers()
->>>>>>> azure
 
     if filter:
         filter = re.compile(filter)
@@ -190,7 +180,6 @@ def delete_node(ids:str) -> None:
     return delete_nodes( ids )
 
 
-<<<<<<< HEAD
 def delete_nodes(ids:list=[], count:int=None) -> None:
 
     if count is not None:
@@ -200,9 +189,6 @@ def delete_nodes(ids:list=[], count:int=None) -> None:
             count -= 1
             if count <= 0:
                 break
-=======
-def delete_nodes(ids:list):
->>>>>>> azure
 
     if not isinstance( ids, list):
         ids = [ids]
@@ -233,11 +219,7 @@ def delete_nodes(ids:list):
 
 
 
-<<<<<<< HEAD
-def create_nodes(cloud_init_file:str=None, count=1) -> str:
-=======
 def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[]):
->>>>>>> azure
 
 
 #    resources = openstack.get_resources_available()
@@ -326,8 +308,6 @@ def next_id(names, regex:str=None) -> int:
 
     return ids[ -1 ] + 1
 
-<<<<<<< HEAD
-=======
 def write_config_file(filename:str='ecc.yaml') -> None:
     if os.path.isfile( filename ):
         raise RuntimeError('Config file already exists, please rename before creating a new one')
@@ -389,4 +369,3 @@ ecc:
 
     return None
 
->>>>>>> azure

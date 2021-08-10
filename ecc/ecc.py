@@ -198,9 +198,11 @@ def delete_nodes(ids:list=[], count:int=None) -> None:
         
         if id in nodes:
             id = nodes[id]['vm_id']
-
-        logger.info("deleting node {}".format( id ))
-        vm = cloud.server( id )
+        try:
+            logger.info("deleting node {}".format( id ))
+            vm = cloud.server( id )
+        except:
+            continue
 
         if 'cloudflare' in config.ecc:
             logger.info('deleting DNS entry...')
@@ -208,6 +210,7 @@ def delete_nodes(ids:list=[], count:int=None) -> None:
 
         logger.info('deleting VM...')
         cloud.server_delete( id )
+        del nodes[id]
 
     if 'ansible_cmd' in config.ecc:
         logger.info('running playbook')

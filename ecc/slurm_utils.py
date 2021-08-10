@@ -67,6 +67,11 @@ def pending_time() -> dict:
     run = run.decode('utf-8')
     pending_times = []
     all_pending_times = []
+    max_wait     = -1
+    pending_wait = -1
+    avg_wait     = -1
+    all_avg_wait = -1
+
     for line in run.split("\n"):
         if line == '':
             continue
@@ -75,16 +80,16 @@ def pending_time() -> dict:
         if fields[0] == 'PENDING':
             pending_times.append( int( fields[1]))
 
-    max_wait = max(pending_times)
-    pending_wait  = len(pending_times)
-    avg_wait = -1
-    if pending_wait > 0:
-        avg_wait = sum( pending_times)/pending_wait
+    if pending_times != []:
+        max_wait = max(pending_times)
+        pending_wait  = len(pending_times)
+        if pending_wait > 0:
+            avg_wait = sum( pending_times)/pending_wait
 
-    all_wait = len(all_pending_times)
-    all_avg_wait = -1
-    if all_wait > 0:
-        all_avg_wait = sum( all_pending_times)/all_wait
+    if all_pending_times != []:
+        all_wait = len(all_pending_times)
+        if all_wait > 0:
+            all_avg_wait = sum( all_pending_times)/all_wait
 
     return {'max':max_wait, 'pending': pending_wait, 'pending_mean': avg_wait, 'all_mean': all_avg_wait}
 

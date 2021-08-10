@@ -77,17 +77,17 @@ def update_nodes_status() -> None:
 
     for vnode in vnodes:
         if vnode['name'] not in nodes:
-            nodes[vnode['name']] = {}
-            nodes[vnode['name']]['vm_id'] = vnode['id']
-            nodes[vnode['name']]['name'] = vnode['name']
-            nodes[vnode['name']]['ip'] = vnode.get('ip', [])
-            nodes[vnode['name']]['vm_state'] = vnode['status']
-            nodes[vnode['name']]['slurm_state'] = 'na'
-            nodes[vnode['name']]['timestamp'] = ecc_utils.timestamp()
+            nodes[ vnode['name'] ] = {}
+            nodes[ vnode['name'] ]['vm_id'] = vnode['id']
+            nodes[ vnode['name'] ]['name'] = vnode['name']
+            nodes[ vnode['name'] ]['ip'] = vnode.get('ip', [])
+            nodes[ vnode['name'] ]['vm_state'] = vnode['status']
+            nodes[ vnode['name'] ]['slurm_state'] = 'na'
+            nodes[ vnode['name'] ]['timestamp'] = ecc_utils.timestamp()
 
         elif 'vm_state' not in nodes[vnode['name']] or nodes[vnode['name']]['vm_state'] != vnode['status']:
-            nodes[vnode['name']]['vm_state'] = vnode['status']
-            nodes[vnode['name']]['timestamp'] = ecc_utils.timestamp()
+            nodes[ vnode['name'] ]['vm_state'] = vnode['status']
+            nodes[ vnode['name'] ]['timestamp'] = ecc_utils.timestamp()
 
 
     for snode in snodes:
@@ -252,9 +252,9 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[]):
             nodes[node_name] = {}
             nodes[node_name]['vm_id'] = node_id
             nodes[node_name]['vm_state'] = 'booting'
-            nodes[node_name] = node_ips
+            nodes[node_name]['ip'] = node_ips
             
-            create_nodes.append(node_name)
+            created_nodes.append(node_name)
 
 
     except Exception as e:
@@ -269,7 +269,7 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[]):
             print(f"failed to run playbook: 'run_playbook({config.ecc.ansible_cmd}, host={node_ips[0]}, cwd={config.ecc.ansible_dir})'")
             return
     
-    for n in create_nodes:
+    for n in created_nodes:
         slurm_utils.update_node_state( n, "resume")
 
 

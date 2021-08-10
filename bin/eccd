@@ -84,7 +84,7 @@ def run_daemon() -> None:
         ### there are jobs queuing, let see what we should do
 
         # Got room to make some additional nodes
-        elif jobs_pending and pending_time['pending_mean'] >= IDLE_TIME and nodes_total <= int(config.ecc.nodes_max):
+        elif jobs_pending and pending_time['pending_mean'] >= IDLE_TIME and nodes_total < int(config.ecc.nodes_max):
 
             logger.info("We got stuff to do and long pending times, creating an additional node...")
             ecc.create_nodes(count=1)

@@ -70,12 +70,10 @@ def servers(filter:str=None):
 
 
 def update_nodes_status() -> None:
-    
     vnodes = servers(config.ecc.name_regex)
     snodes = slurm_utils.nodes()
 
     global nodes
-    nodes = {}
 
     for vnode in vnodes:
         if vnode['name'] not in nodes:
@@ -88,7 +86,7 @@ def update_nodes_status() -> None:
             nodes[vnode['name']]['timestamp'] = ecc_utils.timestamp()
 
         elif 'vm_state' not in nodes[vnode['name']] or nodes[vnode['name']]['vm_state'] != vnode['status']:
-            nodes[vnode['name']]['vstate'] = vnode['status']
+            nodes[vnode['name']]['vm_state'] = vnode['status']
             nodes[vnode['name']]['timestamp'] = ecc_utils.timestamp()
 
 
@@ -140,10 +138,10 @@ def nodes_idle_timelimit(update:bool=False, limit:int=300) -> list:
     idle_nodes = []
     for node in nodes:
         node = nodes[ node ]
-        if node.get('slurm_state', None) == 'idle' and node.get('vm_state', None) == 'active':
-            idle_time = node.timestamp - ecc_utils.timestamp()
+        if node.get('slurm_state', None) == 'idle' and node.get('vm_state', None) in ['active', 'running']:
+            idle_time = ecc_utils.timestamp() - node['timestamp'] 
             if idle_time >= limit:
-                idle_nodes.append(n['vm_id'])
+                idle_nodes.append(node['vm_id'])
 
     return idle_nodes
 

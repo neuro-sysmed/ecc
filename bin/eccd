@@ -72,7 +72,7 @@ def run_daemon() -> None:
         pending_time = slurm_utils.pending_time()
 
         print(f"nodes_total: {nodes_total}, nodes_idle: {len(nodes_idle)}, jobs_pending: {jobs_pending}")
-
+        print(f"mean pending time: {pending_time['pending_mean']}, max pending time: {pending_time['max']}")
 
         # Below the min number of nodes needed for our setup
         if nodes_total < config.ecc.nodes_min:
@@ -84,7 +84,7 @@ def run_daemon() -> None:
         ### there are jobs queuing, let see what we should do
 
         # Got room to make some additional nodes
-        if jobs_pending and pending_time['pending_mean'] >= IDLE_TIME and nodes_total <= int(config.ecc.nodes_max):
+        elif jobs_pending and pending_time['pending_mean'] >= IDLE_TIME and nodes_total <= int(config.ecc.nodes_max):
 
             logger.info("We got stuff to do and long pending times, creating an additional node...")
             ecc.create_nodes(count=1)
@@ -109,9 +109,6 @@ def main():
     parser = argparse.ArgumentParser(description='eccd: the ecc daemon to be run on the master node ')
     parser.add_argument('-l', '--logfile', default=None, help="Logfile to write to, default is stdout")
     parser.add_argument('-v', '--verbose', default=4, action="count", help="Increase the verbosity of logging output")
-    parser.add_argument('config', metavar='config', nargs=1, help="yaml formatted config file",
-                        default=args_utils.get_env_var('ECC_CONF','ecc.yaml')) 
-
     parser.add_argument('-c', '--config', help="ECC config file",
                         default=args_utils.get_env_var('ECC_CONF','ecc.yaml')) 
 

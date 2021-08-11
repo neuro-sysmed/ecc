@@ -61,8 +61,6 @@ def pending_time() -> dict:
     run = run_utils.launch_cmd( cmd )
 
     run = run.stdout
-    if run == b'':
-        return []
 
     run = run.decode('utf-8')
     pending_times = []

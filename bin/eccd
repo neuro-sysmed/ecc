@@ -92,10 +92,9 @@ def run_daemon() -> None:
         # We got extra nodes not needed and we can delete some without going under the min cutoff, so lets get rid of some
         elif nodes_idle:
 
-            nr_of_nodes_to_delete = nodes_total - int(config.ecc.nodes_min)
 
-            logger.info(f"Deleting {nr_of_nodes_to_delete} idle nodes... ")
-            ecc.delete_idle_nodes(nr_of_nodes_to_delete)
+            logger.info(f"Deleting {nodes_idle} idle nodes... ")
+            ecc.delete_idle_nodes(nodes_idle)
 
         else:
             logger.info("Nothing to change.")

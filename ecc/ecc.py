@@ -120,7 +120,7 @@ def unregistered_nodes() -> list:
     unregistered = []
     for node_name in nodes:
         node = nodes[ node_name ]
-        if 'slurm_state' not in node or node['slurm_state'] == 'na'
+        if 'slurm_state' not in node or node['slurm_state'] == 'na':
         unregistered.append( node_name)
 
     return unregistered

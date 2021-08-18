@@ -160,15 +160,16 @@ def nodes_total(update:bool=False) -> int:
     return count
 
 
-def delete_idle_nodes(count:int=1) -> None:
+def delete_idle_nodes(count:int=1, nodes_to_cull:list=None) -> None:
     """ Delete idle nodes, by default one node is vm_deleted
     """
 
-    nodes = nodes_info().values()
-    nodes_to_cull = []
-    for n in nodes:
-        if n['slurm_state'] == 'idle' and n['vm_id'] is not None:
-            nodes_to_cull.append(n['vm_id'])
+    if nodes_to_cull is not None:
+        nodes = nodes_info().values()
+        nodes_to_cull = []
+        for n in nodes:
+            if n['slurm_state'] == 'idle' and n['vm_id'] is not None:
+                nodes_to_cull.append(n['vm_id'])
 
     delete_nodes( nodes_to_cull[0:count] )
     return
@@ -210,7 +211,7 @@ def delete_nodes(ids:list=[], count:int=None) -> None:
 
         logger.info('deleting VM...')
         cloud.server_delete( id )
-        del nodes[id]
+        del nodes[vm.name]
 
     if 'ansible_cmd' in config.ecc:
         logger.info('running playbook')
@@ -264,6 +265,13 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[]):
         logger.warning("Could not create execute server")
         logger.debug("Error: {}".format(e))
         return
+
+    for n in create_nodes:
+        online = ecc_utils.check_host_port(n, 22, duration=60 )
+        if not online:
+            print(f"{n} is not online yet!")
+
+
 
     if 'ansible_cmd' in config.ecc:
         try:

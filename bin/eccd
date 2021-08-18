@@ -94,7 +94,7 @@ def run_daemon() -> None:
 
 
             logger.info(f"Deleting {nodes_idle} idle nodes... ")
-            ecc.delete_idle_nodes(nodes_idle)
+            ecc.delete_idle_nodes(nodes_to_cull=nodes_idle)
 
         else:
             logger.info("Nothing to change.")

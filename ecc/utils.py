@@ -14,6 +14,39 @@ from munch import Munch
 
 import kbr.log_utils as logger
 
+def check_host_port(host, port, duration=10, delay=2):
+    """Repeatedly try if a port on a host is open until duration seconds passed
+    
+    Parameters
+    ----------
+    host : str
+        host ip address or hostname
+    port : int
+        port number
+    duration : int, optional
+        Total duration in seconds to wait, by default 10
+    delay : int, optional
+        delay in seconds between each try, by default 2
+    
+    Returns
+    -------
+    bool
+    """
+
+    tmax = time.time() + duration
+    while time.time() < tmax:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout( 5 )
+            s.connect((host, int(port)))
+            s.shutdown(socket.SHUT_RDWR)
+            return True
+        except:
+            print('retrying...')
+            if delay:
+                time.sleep(delay)
+    return False
+
 
 def get_host_ip() -> str:
     """ gets the host ip address

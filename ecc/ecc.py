@@ -266,7 +266,7 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[]):
         logger.debug("Error: {}".format(e))
         return
 
-    for n in create_nodes:
+    for n in created_nodes:
         online = ecc_utils.check_host_port(n, 22, duration=60 )
         if not online:
             print(f"{n} is not online yet!")

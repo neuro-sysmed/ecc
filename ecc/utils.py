@@ -206,7 +206,7 @@ def get_configuration( config_file:str) -> Munch:
 
     return config
 
-def get_configurations( config_files:[]) -> Munch:
+def get_configurations( config_files:list) -> Munch:
 
     config = Munch()
 

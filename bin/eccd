@@ -66,6 +66,8 @@ def run_daemon() -> None:
         # get the current number of nodes and jobs
         ecc.update_nodes_status()
 
+        ecc.slurm_idle_dead_nodes()
+
         nodes_total = ecc.nodes_total()
         unregistered_nodes = ecc.unregistered_nodes()
         nodes_idle = ecc.nodes_idle_timelimit(limit=IDLE_TIME)

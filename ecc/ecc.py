@@ -162,11 +162,19 @@ def nodes_total(update:bool=False) -> int:
     count = 0
     for node in nodes:
         node = nodes[ node ]
-        if node.get('slurm_state', None) in ['mix', 'idle', 'alloc'] and node.get('vm_state', None) in ['active', 'running']:
-            count += 1
+#        if node.get('slurm_state', None) in ['mix', 'idle', 'alloc'] and node.get('vm_state', None) in ['active', 'running']:
+        count += 1
 
     return count
 
+
+def slurm_idle_dead_nodes():
+
+    for node_name in nodes:
+        node = nodes[ node_name ]
+        if node.get('slurm_state', None) not in ['mix', 'idle', 'alloc'] and node.get('vm_state', None) in ['active', 'running']:
+            slurm_utils.set_node_resume(node_name)
+        count += 1
 
 def delete_idle_nodes(count:int=1, nodes_to_cull:list=None) -> None:
     """ Delete idle nodes, by default one node is vm_deleted

@@ -105,7 +105,7 @@ def update_nodes_status() -> None:
             nodes[snode['name']]['timestamp'] = ecc_utils.timestamp()
 
 
-#    pp.pprint(nodes)
+    pp.pprint(nodes)
 
 
 def nodes_info(update:bool=True) -> list:
@@ -116,6 +116,14 @@ def nodes_info(update:bool=True) -> list:
 
     return nodes
 
+def unregistered_nodes() -> list:
+    unregistered = []
+    for node_name in nodes:
+        node = nodes[ node_name ]
+        if 'slurm_state' not in node or node['slurm_state'] == 'na'
+        unregistered.append( node_name)
+
+    return unregistered
 
 def nodes_idle(update:bool=False) -> int:
 
@@ -198,7 +206,9 @@ def delete_nodes(ids:list=[], count:int=None) -> None:
             continue 
         
         if id in nodes:
+            print(f'deleting: changing id from {id} to {nodes[id]["vm_id"]}')
             id = nodes[id]['vm_id']
+
         try:
             logger.info("deleting node {}".format( id ))
             vm = cloud.server( id )

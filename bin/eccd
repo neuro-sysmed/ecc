@@ -67,6 +67,7 @@ def run_daemon() -> None:
         ecc.update_nodes_status()
 
         nodes_total = ecc.nodes_total()
+        unregistered_nodes = ecc.unregistered_nodes()
         nodes_idle = ecc.nodes_idle_timelimit(limit=IDLE_TIME)
         jobs_pending = slurm_utils.jobs_pending()
         pending_time = slurm_utils.pending_time()
@@ -74,8 +75,15 @@ def run_daemon() -> None:
         print(f"nodes_total: {nodes_total}, nodes_idle: {len(nodes_idle)}, jobs_pending: {jobs_pending}")
         print(f"mean pending time: {pending_time['pending_mean']}, max pending time: {pending_time['max']}")
 
+        if unregistered_nodes != []:
+            logger.info('running playbook to pickup missing nodes...')
+            ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
+
+
+
+
         # Below the min number of nodes needed for our setup
-        if nodes_total < config.ecc.nodes_min:
+        elif nodes_total < config.ecc.nodes_min:
             logger.info("We are below the min number of nodes, creating {} nodes".format(
                 config.ecc.nodes_min - nodes_total))
 

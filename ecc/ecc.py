@@ -121,7 +121,7 @@ def unregistered_nodes() -> list:
     for node_name in nodes:
         node = nodes[ node_name ]
         if 'slurm_state' not in node or node['slurm_state'] == 'na':
-        unregistered.append( node_name)
+            unregistered.append( node_name)
 
     return unregistered
 
@@ -280,6 +280,7 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[]):
         online = ecc_utils.check_host_port(n, 22, duration=60 )
         if not online:
             print(f"{n} is not online yet!")
+            return None
 
 
 

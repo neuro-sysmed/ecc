@@ -174,7 +174,6 @@ def slurm_idle_dead_nodes():
         node = nodes[ node_name ]
         if node.get('slurm_state', None) not in ['mix', 'idle', 'alloc'] and node.get('vm_state', None) in ['active', 'running']:
             slurm_utils.set_node_resume(node_name)
-        count += 1
 
 def delete_idle_nodes(count:int=1, nodes_to_cull:list=None) -> None:
     """ Delete idle nodes, by default one node is vm_deleted

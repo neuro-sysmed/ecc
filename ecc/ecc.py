@@ -6,6 +6,7 @@
 # Kim Brugger (14 Sep 2018), contact: kim@brugger.dk
 
 import sys
+import time
 import os
 import re
 import pprint
@@ -74,6 +75,7 @@ def update_nodes_status() -> None:
     snodes = slurm_utils.nodes()
 
     global nodes
+    nodes_copy = nodes.copy()
 
     for vnode in vnodes:
         if vnode['name'] not in nodes:
@@ -89,6 +91,8 @@ def update_nodes_status() -> None:
             nodes[ vnode['name'] ]['vm_state'] = vnode['status']
             nodes[ vnode['name'] ]['timestamp'] = ecc_utils.timestamp()
 
+        if vnode['name'] in nodes_copy:
+            del nodes_copy[ vnode['name'] ]
 
     for snode in snodes:
         if snode['name'] not in nodes:
@@ -105,7 +109,23 @@ def update_nodes_status() -> None:
             nodes[snode['name']]['timestamp'] = ecc_utils.timestamp()
 
 
-    pp.pprint(nodes)
+        if snode['name'] in nodes_copy:
+            del nodes_copy[ snode['name'] ]
+
+    for node_name in nodes:
+        node = nodes[ node_name ]
+        if node['vm_state'] not in ['running', 'active']:
+            del nodes[ node_name ]
+            del nodes_copy[ node_name ]
+
+    for node_name in nodes_copy:
+        print( f"{node_name} no longer in list, removing it")
+        del nodes[ node_name ]
+
+
+
+
+
 
 
 def nodes_info(update:bool=True) -> list:
@@ -162,18 +182,29 @@ def nodes_total(update:bool=False) -> int:
     count = 0
     for node in nodes:
         node = nodes[ node ]
-#        if node.get('slurm_state', None) in ['mix', 'idle', 'alloc'] and node.get('vm_state', None) in ['active', 'running']:
-        count += 1
+        if node.get('vm_state', None) in ['active', 'running']:
+            count += 1
 
     return count
 
 
-def slurm_idle_dead_nodes():
+def slurm_idle_drained_nodes():
+    """ Set node in resume state if is """
+
+    revived = 0
 
     for node_name in nodes:
         node = nodes[ node_name ]
-        if node.get('slurm_state', None) not in ['mix', 'idle', 'alloc'] and node.get('vm_state', None) in ['active', 'running']:
+        if node.get('slurm_state', None) in ['drain', 'dead'] and node.get('vm_state', None) in ['active', 'running']:
+            print(f"reviving {node_name}")
             slurm_utils.set_node_resume(node_name)
+            revived += 1
+
+    if revived:
+        time.sleep( 5 )
+        update_nodes_status()
+
+
 
 def delete_idle_nodes(count:int=1, nodes_to_cull:list=None) -> None:
     """ Delete idle nodes, by default one node is vm_deleted
@@ -284,11 +315,12 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[]):
         return
 
     for n in created_nodes:
-        online = ecc_utils.check_host_port(n, 22, duration=60 )
+        online = ecc_utils.check_host_port(n, 22, duration=180 )
         if not online:
-            print(f"{n} is not online yet!")
+            logger.warn(f"{n} is not online yet")
             return None
-
+        else:
+            logger.info(f"{n} is online")
 
 
     if 'ansible_cmd' in config.ecc:

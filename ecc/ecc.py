@@ -76,7 +76,9 @@ def update_nodes_status():
     global nodes
     nodes = {}
 
+
     for vnode in vnodes:
+
         if vnode['name'] not in nodes:
             nodes[vnode['name']] = {}
             nodes[vnode['name']]['vm_id'] = vnode['id']
@@ -100,13 +102,13 @@ def update_nodes_status():
             nodes[snode['name']]['vm_state'] = None
             nodes[snode['name']]['slurm_state'] = snode['state']
             nodes[snode['name']]['timestamp'] = ecc_utils.timestamp()
+            nodes[snode['name']]['partition'] = snode['partition']
 
-        elif 'slurm_state' not in nodes[snode['name']]or nodes[snode['name']]['slurm_state'] != snode['state']:
+        elif 'slurm_state' not in nodes[snode['name']] or nodes[snode['name']]['slurm_state'] != snode['state']:
             nodes[snode['name']]['slurm_state'] = snode['state']
             nodes[snode['name']]['timestamp'] = ecc_utils.timestamp()
+            nodes[snode['name']]['partition'] = snode['partition']
 
-
-#    pp.pprint(nodes)
 
 
 def nodes_info(update:bool=True):
@@ -132,7 +134,7 @@ def nodes_idle(update:bool=False):
     return count
 
 
-def nodes_total(update:bool=False):
+def nodes_total(update:bool=False, partition:str=None):
 
     if update:
         update_nodes_status()
@@ -141,7 +143,8 @@ def nodes_total(update:bool=False):
     for node in nodes:
         node = nodes[ node ]
         if node.get('slurm_state', None) in ['mix', 'idle', 'alloc'] and node.get('vm_state', None) in ['active', 'running']:
-            count += 1
+            if node.get('partition', None) == partition:
+                count += 1
 
     return count
 

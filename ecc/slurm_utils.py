@@ -71,7 +71,7 @@ def job_counts_by_state():
 
 
 
-def nodes():
+def nodes(partition:str=None):
     #PARTITION             AVAIL  TIMELIMIT  NODES  STATE NODELIST
     #usegalaxy_production*    up   infinite      2    mix nrec1.usegalaxy.no,slurm.usegalaxy.no
     #usegalaxy_production*    up   infinite      1   idle nrec2.usegalaxy.no
@@ -81,6 +81,9 @@ def nodes():
     #ecc-node-1       1    azure* idle  
     #ecc-node-2       1    azure* down* 
     cmd = "sinfo -Nh"
+
+    if partition is not None:
+        cmd += f" --partition {partition}"
 
     run = run_utils.launch_cmd( cmd )
 
@@ -97,7 +100,8 @@ def nodes():
         if line == '':
             continue
         fields = line.split()
-        nodes.append({'name':fields[0], 'avail': fields[1], "state": fields[3]})
+        fields[2] = fields[2].replace("*", "")
+        nodes.append({'name':fields[0], 'avail': fields[1], "state": fields[3], "partition": fields[2]})
 #        for node in fields[5].split(","):
 #            nodes.append( {'name':node, 'avail': fields[2], "state": fields[4]})
 

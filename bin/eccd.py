@@ -53,6 +53,42 @@ def init(args):
         logger.info(f'{program_name} (v:{version})')
 
 
+def update_partition(partition:str=None):
+    nodes_total = ecc.nodes_total()
+    nodes_idle = ecc.nodes_idle()
+    jobs_pending = slurm_utils.jobs_pending()
+
+    print(f"nodes_total: {nodes_total}, nodes_idle: {nodes_idle}, jobs_pending: {jobs_pending}")
+
+    # Below the min number of nodes needed for our setup
+    if nodes_total < config.ecc.nodes_min:
+        logger.info("We are below the min number of nodes, creating {} nodes".format(
+            config.ecc.nodes_min - nodes_total))
+
+        ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=config.ecc.nodes_min - nodes_total)
+
+    ### there are jobs queuing, let see what we should do
+
+    # Got room to make some additional nodes
+    elif (jobs_pending and nodes_idle == 0 and nodes_total <= int(config.ecc.nodes_max)):
+
+        logger.info("We got stuff to do, creating some additional nodes...")
+
+        ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=1)
+
+    # We got extra nodes not needed and we can delete some without going under the min cutoff, so lets get rid of some
+    elif jobs_pending == 0 and nodes_idle and nodes_total > config.ecc.nodes_min:
+
+        nr_of_nodes_to_delete = nodes_total - int(config.ecc.nodes_min)
+
+        logger.info(f"Deleting {nr_of_nodes_to_delete} idle nodes... ")
+        ecc.delete_idle_nodes(nr_of_nodes_to_delete)
+
+    else:
+        logger.info("Nothing to change.")
+
+
+
 
 def run_daemon() -> None:
     """ Creates the ecc daemon loop that creates and destroys nodes etc.
@@ -63,38 +99,9 @@ def run_daemon() -> None:
         # get the current number of nodes and jobs
         ecc.update_nodes_status()
 
-        nodes_total = ecc.nodes_total()
-        nodes_idle = ecc.nodes_idle()
-        jobs_pending = slurm_utils.jobs_pending()
-
-        print(f"nodes_total: {nodes_total}, nodes_idle: {nodes_idle}, jobs_pending: {jobs_pending}")
-
-        # Below the min number of nodes needed for our setup
-        if nodes_total < config.ecc.nodes_min:
-            logger.info("We are below the min number of nodes, creating {} nodes".format(
-                config.ecc.nodes_min - nodes_total))
-
-            ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=config.ecc.nodes_min - nodes_total)
-
-        ### there are jobs queuing, let see what we should do
-
-        # Got room to make some additional nodes
-        elif (jobs_pending and nodes_idle == 0 and nodes_total <= int(config.ecc.nodes_max)):
-
-            logger.info("We got stuff to do, creating some additional nodes...")
-
-            ecc.create_nodes(cloud_init_file=config.ecc.cloud_init, count=1)
-
-        # We got extra nodes not needed and we can delete some without going under the min cutoff, so lets get rid of some
-        elif jobs_pending == 0 and nodes_idle and nodes_total > config.ecc.nodes_min:
-
-            nr_of_nodes_to_delete = nodes_total - int(config.ecc.nodes_min)
-
-            logger.info(f"Deleting {nr_of_nodes_to_delete} idle nodes... ")
-            ecc.delete_idle_nodes(nr_of_nodes_to_delete)
-
-        else:
-            logger.info("Nothing to change.")
+        # pretty hackey, but if no queues defined, run with "default"
+        for queue in config.get('queues', [None]):
+            update_partition( partition=queue )
 
         logger.info("Napping for {} second(s).".format(config.ecc.sleep))
         time.sleep(config.ecc.sleep)

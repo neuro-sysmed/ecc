@@ -45,8 +45,8 @@ def init(args):
             print("Need to configure either a single ecc.name_regex or define some queues")
             sys.exit(1)
         else:
-            for queue in config.ecc.queues:
-                config.ecc.queues[queue].name_regex = config.config.ecc.queues[queue].name_template_format("(\d+)")
+            for queue in config.queues:
+                config.queues[queue].name_regex = config.config.ecc.queues[queue].name_template_format("(\d+)")
 
 
         ecc.set_config(config)
@@ -76,7 +76,7 @@ def update_partition(partition:str=None):
 
     if partition is not None:
         print( f"Updating {partition}")
-        
+
     print(f"nodes_total: {nodes_total}, nodes_idle: {len(nodes_idle)}, jobs_pending: {jobs_pending}")
     print(f"mean pending time: {pending_time['pending_mean']}, max pending time: {pending_time['max']}")
 

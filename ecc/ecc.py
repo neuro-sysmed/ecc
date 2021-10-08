@@ -71,7 +71,13 @@ def servers(filter:str=None):
 
 
 def update_nodes_status() -> None:
-    vnodes = servers(config.ecc.name_regex)
+    if 'name_regex' in config.ecc:
+        vnodes = servers(config.ecc.name_regex)
+    else:
+        vnodes = []
+        for queue in config.queues:
+            vnodes += config.queues[queue].name_regex = config.queues[queue].name_template.format("(\d+)")
+
     snodes = slurm_utils.nodes()
 
     global nodes

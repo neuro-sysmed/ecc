@@ -46,7 +46,7 @@ def init(args):
             sys.exit(1)
         else:
             for queue in config.queues:
-                config.queues[queue].name_regex = config.config.ecc.queues[queue].name_template_format("(\d+)")
+                config.queues[queue].name_regex = config.queues[queue].name_template.format("(\d+)")
 
 
         ecc.set_config(config)

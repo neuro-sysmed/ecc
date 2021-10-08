@@ -77,7 +77,9 @@ def update_nodes_status() -> None:
     global nodes
     nodes_copy = nodes.copy()
 
+
     for vnode in vnodes:
+
         if vnode['name'] not in nodes:
             nodes[ vnode['name'] ] = {}
             nodes[ vnode['name'] ]['vm_id'] = vnode['id']
@@ -103,20 +105,14 @@ def update_nodes_status() -> None:
             nodes[snode['name']]['vm_state'] = None
             nodes[snode['name']]['slurm_state'] = snode['state']
             nodes[snode['name']]['timestamp'] = ecc_utils.timestamp()
+            nodes[snode['name']]['partition'] = snode['partition']
 
-        elif 'slurm_state' not in nodes[snode['name']]or nodes[snode['name']]['slurm_state'] != snode['state']:
+        elif 'slurm_state' not in nodes[snode['name']] or nodes[snode['name']]['slurm_state'] != snode['state']:
             nodes[snode['name']]['slurm_state'] = snode['state']
             nodes[snode['name']]['timestamp'] = ecc_utils.timestamp()
+            nodes[snode['name']]['partition'] = snode['partition']
 
 
-        if snode['name'] in nodes_copy:
-            del nodes_copy[ snode['name'] ]
-
-    for node_name in nodes:
-        node = nodes[ node_name ]
-        if node['vm_state'] not in ['running', 'active']:
-            del nodes[ node_name ]
-            del nodes_copy[ node_name ]
 
     for node_name in nodes_copy:
         print( f"{node_name} no longer in list, removing it")
@@ -173,8 +169,7 @@ def nodes_idle_timelimit(update:bool=False, limit:int=300) -> list:
 
     return idle_nodes
 
-
-def nodes_total(update:bool=False) -> int:
+def nodes_total(update:bool=False, partition:str=None):
 
     if update:
         update_nodes_status()
@@ -182,8 +177,9 @@ def nodes_total(update:bool=False) -> int:
     count = 0
     for node in nodes:
         node = nodes[ node ]
-        if node.get('vm_state', None) in ['active', 'running']:
-            count += 1
+        if node.get('slurm_state', None) in ['mix', 'idle', 'alloc'] and node.get('vm_state', None) in ['active', 'running']:
+            if node.get('partition', None) == partition:
+                count += 1
 
     return count
 

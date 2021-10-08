@@ -1,0 +1,67 @@
+openstack:
+    auth_url: https://api.uh-iaas.no:5000/v3
+    password: <PASSWORD>
+    project_domain_name: dataporten
+    project_name: elixir-nrec-prod-backend
+    region_name: bgo
+    user_domain_name: dataporten
+    username: <USERNAME>
+
+azure:
+    subscription_id: <SUBSCRIPTION ID>    
+
+ecc:
+    log: ecc.log
+    sleep: 30
+    name_template: "ecc{}.usegalaxy.no"
+
+    image: GOLD CentOS 7
+    cloud_init: <PATH>/ecc_node.yaml
+    ansible_dir: <PATH, eg: /usr/local/ansible/infrastructure-playbook/env/test>
+    ansible_cmd: "<CMD, EG: ./venv/bin/ansible-playbook -i ecc_nodes.py slurm.yml"
+
+    # If doing DNS for nodes
+    cloudflare_apikey: <API KEY>
+    cloudflare_email: <EMAIL>
+
+    # openstack variables
+    flavor: m1.medium
+    key: <SSHKEY>
+    network: dualStack
+    security_groups: slurm-node
+    
+    #azure variables
+    compute_group: FOR-NEURO-SYSMED-UTV-COMPUTE
+    network_group: FOR-NEURO-SYSMED-UTV-NETWORK
+    virtual_network: FOR-NEURO-SYSMED-UTV-VNET
+    virtual_subnet:  WorkloadsSubnet
+    vm_size: Standard_D2_v2
+    admin_username: root
+    admin_password: <SECRET!>
+    
+queues:
+  small:
+    vm_size: Standard_D2_v2
+    nodes_max: 6
+    nodes_min: 1
+    idle_time: 90
+    name_template: "ecc-small-{}"
+  medium:
+    vm_size: Standard_D4_v2
+    nodes_max: 4
+    nodes_min: 0
+    idle_time: 90
+    name_template: "ecc-medium-{}"
+  large:
+    vm_size: Standard_D32_v2
+    nodes_max: 2
+    nodes_min: 0
+    idle_time: 90
+    name_template: "ecc-large-{}"
+  huge:
+    vm_size: Standard_D64_v2
+    nodes_max: 2
+    nodes_min: 0
+    idle_time: 30
+    name_template: "ecc-huge-{}"
+

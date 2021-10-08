@@ -76,7 +76,7 @@ def update_nodes_status() -> None:
     else:
         vnodes = []
         for queue in config.queues:
-            vnodes += config.queues[queue].name_regex = config.queues[queue].name_template.format("(\d+)")
+            vnodes += servers( config.queues[queue].name_regex )
 
     snodes = slurm_utils.nodes()
 

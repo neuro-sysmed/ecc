@@ -16,8 +16,8 @@ ecc:
     name_template: "ecc{}.usegalaxy.no"
 
     image: GOLD CentOS 7
-    cloud_init: <PATH>/ecc_node.yaml
-    ansible_dir: <PATH, eg: /usr/local/ansible/infrastructure-playbook/env/test>
+    cloud_init: "<PATH>/ecc_node.yaml"
+    ansible_dir: "<PATH, eg: /usr/local/ansible/infrastructure-playbook/env/test>"
     ansible_cmd: "<CMD, EG: ./venv/bin/ansible-playbook -i ecc_nodes.py slurm.yml"
 
     # If doing DNS for nodes
@@ -41,13 +41,13 @@ ecc:
     
 queues:
   small:
-    vm_size: Standard_D2_v2
+    vm_size: Standard_D4_v2
     nodes_max: 6
     nodes_min: 1
     idle_time: 90
     name_template: "ecc-small-{}"
   medium:
-    vm_size: Standard_D4_v2
+    vm_size: Standard_D8_v2
     nodes_max: 4
     nodes_min: 0
     idle_time: 90

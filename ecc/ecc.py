@@ -110,7 +110,6 @@ def update_nodes_status() -> None:
         elif 'slurm_state' not in nodes[snode['name']] or nodes[snode['name']]['slurm_state'] != snode['state']:
             nodes[snode['name']]['slurm_state'] = snode['state']
             nodes[snode['name']]['timestamp'] = ecc_utils.timestamp()
-            nodes[snode['name']]['partition'] = snode['partition']
 
 
 
@@ -132,11 +131,11 @@ def nodes_info(update:bool=True) -> list:
 
     return nodes
 
-def unregistered_nodes() -> list:
+def unregistered_nodes(partition:str=None) -> list:
     unregistered = []
     for node_name in nodes:
         node = nodes[ node_name ]
-        if 'slurm_state' not in node or node['slurm_state'] == 'na':
+        if node.get('partition', None) == partition and ('slurm_state' not in node or node['slurm_state'] == 'na'):
             unregistered.append( node_name)
 
     return unregistered
@@ -177,21 +176,25 @@ def nodes_total(update:bool=False, partition:str=None):
     count = 0
     for node in nodes:
         node = nodes[ node ]
-        if node.get('slurm_state', None) in ['mix', 'idle', 'alloc'] and node.get('vm_state', None) in ['active', 'running']:
+        if (node.get('slurm_state', None) in ['mix', 'idle', 'alloc'] and 
+            node.get('vm_state', None) in ['active', 'running'] and 
+            node.get('partition', None) == partition):
             if node.get('partition', None) == partition:
                 count += 1
 
     return count
 
 
-def slurm_idle_drained_nodes():
+def slurm_idle_drained_nodes(partition:str=None):
     """ Set node in resume state if is """
 
     revived = 0
 
     for node_name in nodes:
         node = nodes[ node_name ]
-        if node.get('slurm_state', None) in ['drain', 'dead'] and node.get('vm_state', None) in ['active', 'running']:
+        if (node.get('slurm_state', None) in ['drain', 'dead'] and 
+            node.get('vm_state', None) in ['active', 'running'] and 
+            node.get('partition', None) == partition ):
             print(f"reviving {node_name}")
             slurm_utils.set_node_resume(node_name)
             revived += 1

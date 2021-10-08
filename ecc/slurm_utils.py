@@ -15,15 +15,20 @@ def available() -> bool:
 
 
 
-def jobs():
+def jobs(partition:str=None):
     #"%.18i %.9P %.8j %.8u %.2t %.10M %.6D %R"
     #JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
     #33187 usegalaxy     test sysadmin  R       0:15      1 slurm.usegalaxy.no
     cmd = "squeue -hl"
 
+    if partition is not None:
+        cmd += f' -p {partition}'
+
+
     run = run_utils.launch_cmd( cmd )
 
 #    run = "  33187 usegalaxy     test sysadmin  PD       0:15      1 slurm.usegalaxy.no\n 33187 usegalaxy     test sysadmin  R       0:15      1 slurm.usegalaxy.no"
+
 
 
     run = run.stdout
@@ -42,21 +47,24 @@ def jobs():
 
     return jobs
 
-def jobs_pending():
+def jobs_pending(partition=None):
     count = 0
-    for job in jobs():
+    for job in jobs(partition):
         if job['state'] == 'PD' or job['state'] == 'PENDING':
             count += 1
 
     return count
 
-def pending_time() -> dict:
+def pending_time(partition:str=None) -> dict:
     #STATE               PENDING_TIME        
     #PENDING             2454                
     #RUNNING             2451    
 
 
     cmd = "squeue -O state,pendingtime -h"
+
+    if partition is not None:
+        cmd += f' -p {partition}'
 
     run = run_utils.launch_cmd( cmd )
 

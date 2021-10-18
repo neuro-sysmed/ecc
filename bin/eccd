@@ -111,7 +111,7 @@ def update_partition(partition:str=None):
     elif jobs_pending and pending_time['pending_mean'] >= IDLE_TIME and nodes_total < int(nodes_max):
 
         logger.info("We got stuff to do and long pending times, creating an additional node...")
-        ecc.create_nodes(count=1, name_regex=config.queues[ partition].name_regex, name_regex=config.queues[ partition].name_)
+        ecc.create_nodes(count=1, name_regex=config.queues[ partition].name_regex, name_template=config.queues[ partition].name_)
 
     # We got extra nodes not needed and we can delete some without going under the min cutoff, so lets get rid of some
     elif nodes_idle:

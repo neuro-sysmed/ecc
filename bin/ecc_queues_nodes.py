@@ -125,6 +125,7 @@ def main():
         sys.exit(1)
     else:
         for queue in config.queues:
+            hosts[f"{queue}"] = {"hosts":[]}, "_meta": {"hostvars":{}}}
             nodes = ecc.servers(config.queues[queue].name_template.format("([01-99])"))
             for node in nodes:
                 if len( node['ip']) == 0:

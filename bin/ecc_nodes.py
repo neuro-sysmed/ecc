@@ -1,5 +1,5 @@
-#!/usr/local/lib/tmp/ecc/venv/bin/python•
-# !/bin/env python3
+#!/bin/env python3
+# !/cluster/lib/ecc/venv/bin/python
 #
 #
 #
@@ -89,6 +89,8 @@ def main():
     args = parser.parse_args()
 
 
+    if isinstance(args.config_file, list):
+        args.config_file = args.config_file[0]
 
     config = config_utils.readin_config_file(args.config_file)
 
@@ -96,8 +98,9 @@ def main():
     logger.set_log_level(0)
 
     hosts = readin_inventory(config.ecc.ansible_dir)
+    if args.host_group not in hosts:
+        hosts[args.host_group] = {"hosts":[]}
 
-    config.ecc.name_regex = config.ecc.name_template.format("(\d+)")
     if 'openstack' in config:
         ecc.openstack_connect(config.openstack)
     elif 'azure' in config:
@@ -105,14 +108,42 @@ def main():
     else:
         print('No backend configured, options are: openstack and azure')
 
-    nodes = ecc.servers(config.ecc.name_regex)
+    if 'name_template' in config.ecc:
+        nodes = ecc.servers(config.ecc.name_template.format("([01-99])"))
+        for node in nodes:
+#        print( node )
+            if len( node['ip']) == 0:
+                continue
+            ip_addr = node['ip'][0]
+            node_name = node['name']
+            hosts[f"{args.host_group}"]['hosts'].append( node_name )
+            hosts["_meta"]['hostvars'][node_name] = {'ansible_host': ip_addr,
+                                                     'ansible_user':args.ansible_user,
+                                                     'trusted_host': args.trusted_host}
+    elif 'queues' not in config:
+        print("Need to configure either a single ecc.name_regex or define some queues")
+        sys.exit(1)
+    else:
+        for queue in config.queues:
+            hosts[f"{queue}"] = {"hosts":[]}
+            nodes = ecc.servers(config.queues[queue].name_template.format("([01-99])"))
+            for node in nodes:
+                if len( node['ip']) == 0:
+                    continue
+                ip_addr = node['ip'][0]
+                node_name = node['name']
+                hosts[f"{queue}"]['hosts'].append( node_name )
+                hosts["_meta"]['hostvars'][node_name] = {'ansible_host': ip_addr,
+                                                         'ansible_user':args.ansible_user,
+                                                         'trusted_host': args.trusted_host}
 
+
+
+#    print( nodes )
 
     # get the current nodes
     #instances.update( condor.nodes() )
     #nodes = instances.node_state_counts()
-    if args.host_group not in hosts:
-        hosts[args.host_group] = {"hosts":[]}
     for node in nodes:
 #        print( node )
         if len( node['ip']) == 0:

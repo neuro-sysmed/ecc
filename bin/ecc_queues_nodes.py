@@ -92,7 +92,7 @@ def main():
     if isinstance(args.config_file, list):
         args.config_file = args.config_file[0]
 
-    config = config_utils.readin_config_file(args.config_file[0])
+    config = config_utils.readin_config_file(args.config_file)
 
     logger.init(name='ecc_nodes', log_file=None)
     logger.set_log_level(0)

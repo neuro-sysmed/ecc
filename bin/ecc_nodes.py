@@ -1,5 +1,5 @@
 #!/bin/env python3
-# !/cluster/lib/ecc/venv/bin/python
+# !/usr/local/lib/ecc/venv/bin/python
 #
 #
 #
@@ -54,22 +54,22 @@ def readin_inventory(ansible_dir:str) -> dict:
         sys.exit(-1)
 
 
-    hosts = {f"slurm":{"hosts":[]}, "_meta": {"hostvars":{}}}
+    hosts = {"_meta": {"hostvars":{}}}
 
 
-    for section in config.sections():
-        hosts[section] = {}
-        hosts[section]["hosts"] = []
-        for key in config[section].keys():
-            line = f"{key}={''.join(config[section][key])}"
+    # for section in config.sections():
+    #     hosts[section] = {}
+    #     hosts[section]["hosts"] = []
+    #     for key in config[section].keys():
+    #         line = f"{key}={''.join(config[section][key])}"
 
-            fields = line.split()
-            host = fields[ 0 ]
-            hosts[section]["hosts"].append( host )
-            hosts["_meta"]['hostvars'][host] = {}
-            for f in fields[1:]:
-                key, value = f.split("=")
-                hosts["_meta"]['hostvars'][host][key] = value
+    #         fields = line.split()
+    #         host = fields[ 0 ]
+    #         hosts[section]["hosts"].append( host )
+    #         hosts["_meta"]['hostvars'][host] = {}
+    #         for f in fields[1:]:
+    #             key, value = f.split("=")
+    #             hosts["_meta"]['hostvars'][host][key] = value
 
 
     return hosts
@@ -77,8 +77,6 @@ def readin_inventory(ansible_dir:str) -> dict:
 def main():
 
     parser = argparse.ArgumentParser(description='ehos_status: print ehos status in telegraf format')
-#    parser.add_argument('config_file', metavar='config-file', nargs="*", help="yaml formatted config file",
-#                        default=ecc.utils.find_config_file('ecc.yaml'))
     parser.add_argument('config_file', metavar='config-file', nargs="*", help="yaml formatted config file",
                         default=args_utils.get_env_var('ECC_CONF','ecc.yaml'))
     parser.add_argument('--list', action='store_true') # expected by ansible
@@ -87,7 +85,6 @@ def main():
     parser.add_argument('-t','--trusted-host', default='yes', help='host group to put the nodes in') # expected by ansible
 
     args = parser.parse_args()
-
 
     if isinstance(args.config_file, list):
         args.config_file = args.config_file[0]
@@ -108,10 +105,10 @@ def main():
     else:
         print('No backend configured, options are: openstack and azure')
 
+    # This is so poor, but cannot be bother to refactor right now.
     if 'name_template' in config.ecc:
         nodes = ecc.servers(config.ecc.name_template.format("([01-99])"))
         for node in nodes:
-#        print( node )
             if len( node['ip']) == 0:
                 continue
             ip_addr = node['ip'][0]
@@ -138,25 +135,6 @@ def main():
                                                          'trusted_host': args.trusted_host}
 
 
-
-#    print( nodes )
-
-    # get the current nodes
-    #instances.update( condor.nodes() )
-    #nodes = instances.node_state_counts()
-    for node in nodes:
-#        print( node )
-        if len( node['ip']) == 0:
-            continue
-        ip_addr = node['ip'][0]
-        node_name = node['name']
-        hosts[f"{args.host_group}"]['hosts'].append( node_name )
-        hosts["_meta"]['hostvars'][node_name] = {'ansible_host': ip_addr,
-                                                 'ansible_user':args.ansible_user,
-                                                 'trusted_host': args.trusted_host}
-
-
-#    pp.pprint(  hosts )
     print( json.dumps( hosts ))
 
 if __name__ == '__main__':

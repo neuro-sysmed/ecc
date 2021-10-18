@@ -93,6 +93,7 @@ def update_nodes_status() -> None:
             nodes[ vnode['name'] ]['ip'] = vnode.get('ip', [])
             nodes[ vnode['name'] ]['vm_state'] = vnode['status']
             nodes[ vnode['name'] ]['slurm_state'] = 'na'
+            nodes[ vnode['name'] ]['partition'] = 'na'
             nodes[ vnode['name'] ]['timestamp'] = ecc_utils.timestamp()
 
         elif 'vm_state' not in nodes[vnode['name']] or nodes[vnode['name']]['vm_state'] != vnode['status']:
@@ -110,11 +111,12 @@ def update_nodes_status() -> None:
             nodes[snode['name']]['ip'] = []
             nodes[snode['name']]['vm_state'] = None
             nodes[snode['name']]['slurm_state'] = snode['state']
-            nodes[snode['name']]['timestamp'] = ecc_utils.timestamp()
             nodes[snode['name']]['partition'] = snode['partition']
+            nodes[snode['name']]['timestamp'] = ecc_utils.timestamp()
 
         elif 'slurm_state' not in nodes[snode['name']] or nodes[snode['name']]['slurm_state'] != snode['state']:
             nodes[snode['name']]['slurm_state'] = snode['state']
+            nodes[snode['name']]['partition'] = snode['partition']
             nodes[snode['name']]['timestamp'] = ecc_utils.timestamp()
 
 
@@ -185,8 +187,8 @@ def nodes_total(update:bool=False, partition:str=None):
         if (node.get('slurm_state', None) in ['mix', 'idle', 'alloc'] and 
             node.get('vm_state', None) in ['active', 'running'] and 
             node.get('partition', None) == partition):
-            if node.get('partition', None) == partition:
-                count += 1
+
+            count += 1
 
     return count
 

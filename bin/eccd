@@ -66,20 +66,25 @@ def init(args):
 
 
 def update_partition(partition:str=None):
-    ecc.slurm_idle_drained_nodes(partition)
+    if partition is not None:
+        print( f"Updating partition: '{partition}'")
+    else:
+        print( f"Updating all nodes in partitions")
 
-    nodes_total = ecc.nodes_total(partition)
-    unregistered_nodes = ecc.unregistered_nodes(partition)
+
+    ecc.slurm_idle_drained_nodes(partition=partition)
+
+    nodes_total = ecc.nodes_total(partition=partition)
+    unregistered_nodes = ecc.unregistered_nodes(partition=partition)
     nodes_idle = ecc.nodes_idle_timelimit(limit=IDLE_TIME)
-    jobs_pending = slurm_utils.jobs_pending(partition)
-    pending_time = slurm_utils.pending_time(partition)
+    jobs_pending = slurm_utils.jobs_pending(partition=partition)
+    pending_time = slurm_utils.pending_time(partition=partition)
 
     nodes_min = 0
     if partition is not None:
         nodes_min = config.queues[ partition].nodes_min
     elif 'nodes_min' in config.ecc:
         nodes_min = config.ecc.nodes_min
-
 
     nodes_max = 10
     if partition is not None:
@@ -88,8 +93,6 @@ def update_partition(partition:str=None):
         nodes_max = config.ecc.nodes_max
 
 
-    if partition is not None:
-        print( f"Updating {partition}")
 
     print(f"nodes_total: {nodes_total}, nodes_idle: {len(nodes_idle)}, jobs_pending: {jobs_pending}")
     print(f"mean pending time: {pending_time['pending_mean']}, max pending time: {pending_time['max']}")

@@ -161,7 +161,7 @@ def nodes_idle(update:bool=False) -> int:
 
     return count
 
-def nodes_idle_timelimit(update:bool=False, limit:int=300) -> list:
+def nodes_idle_timelimit(update:bool=False, limit:int=300, partition:str=None) -> list:
 
     if update:
         update_nodes_status()
@@ -169,7 +169,9 @@ def nodes_idle_timelimit(update:bool=False, limit:int=300) -> list:
     idle_nodes = []
     for node in nodes:
         node = nodes[ node ]
-        if node.get('slurm_state', None) == 'idle' and node.get('vm_state', None) in ['active', 'running']:
+        if (node.get('slurm_state', None) == 'idle' and 
+           node.get('vm_state', None) in ['active', 'running'] and 
+           node.get('partition', None) == partition):
             idle_time = ecc_utils.timestamp() - node['timestamp'] 
             if idle_time >= limit:
                 idle_nodes.append(node['vm_id'])
@@ -184,7 +186,7 @@ def nodes_total(update:bool=False, partition:str=None):
     count = 0
     for node in nodes:
         node = nodes[ node ]
-        if (node.get('slurm_state', None) in ['mix', 'idle', 'alloc'] and 
+        if (node.get('slurm_state', None) in ['mix', 'idle', 'alloc', 'down'] and 
             node.get('vm_state', None) in ['active', 'running'] and 
             node.get('partition', None) == partition):
 

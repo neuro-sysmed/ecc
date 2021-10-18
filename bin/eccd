@@ -76,7 +76,7 @@ def update_partition(partition:str=None):
 
     nodes_total = ecc.nodes_total(partition=partition)
     unregistered_nodes = ecc.unregistered_nodes(partition=partition)
-    nodes_idle = ecc.nodes_idle_timelimit(limit=IDLE_TIME)
+    nodes_idle = ecc.nodes_idle_timelimit(limit=IDLE_TIME, partition=partition)
     jobs_pending = slurm_utils.jobs_pending(partition=partition)
     pending_time = slurm_utils.pending_time(partition=partition)
 

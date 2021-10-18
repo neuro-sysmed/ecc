@@ -1,4 +1,4 @@
-#!/cluster/lib/ecc/venv/bin/python
+#!/usr/local/lib/tmp/ecc/venv/bin/python•
 # !/bin/env python3
 #
 #
@@ -97,7 +97,7 @@ def main():
 
     hosts = readin_inventory(config.ecc.ansible_dir)
 
-    config.ecc.name_regex = config.ecc.name_template.format("([01-99])")
+    config.ecc.name_regex = config.ecc.name_template.format("(\d+)")
     if 'openstack' in config:
         ecc.openstack_connect(config.openstack)
     elif 'azure' in config:

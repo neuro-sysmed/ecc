@@ -54,7 +54,7 @@ def azure_connect(config):
     cloud.connect(config.subscription_id)
 
 
-def servers(filter:str=None):
+def servers(filter:str=None) -> list:
     servers = cloud.servers()
 
     if filter:

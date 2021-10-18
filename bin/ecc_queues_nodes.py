@@ -1,5 +1,5 @@
-#!/cluster/lib/ecc/venv/bin/python
-# !/bin/env python3
+#!/bin/env python3
+# !/cluster/lib/ecc/venv/bin/python
 #
 #
 #
@@ -89,15 +89,16 @@ def main():
     args = parser.parse_args()
 
 
+    if isinstance(args.config_file, list):
+        args.config_file = args.config_file[0]
 
-    config = config_utils.readin_config_file(args.config_file)
+    config = config_utils.readin_config_file(args.config_file[0])
 
     logger.init(name='ecc_nodes', log_file=None)
     logger.set_log_level(0)
 
     hosts = readin_inventory(config.ecc.ansible_dir)
 
-    config.ecc.name_regex = config.ecc.name_template.format("([01-99])")
     if 'openstack' in config:
         ecc.openstack_connect(config.openstack)
     elif 'azure' in config:
@@ -107,13 +108,13 @@ def main():
 
     nodes = []
     if 'name_template' in config.ecc:
-        nodes = ecc.servers(config.ecc.name_regex)
+        nodes = ecc.servers(config.ecc.name_template.format("([01-99])"))
     elif 'queues' not in config:
         print("Need to configure either a single ecc.name_regex or define some queues")
         sys.exit(1)
     else:
         for queue in config.queues:
-            nodes += ecc.servers(config.queues[queue].name_template)
+            nodes += ecc.servers(config.queues[queue].name_template.format("([01-99])"))
 
 
     print( nodes )

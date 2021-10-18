@@ -109,7 +109,8 @@ def update_partition(partition:str=None):
 
         ecc.create_nodes(count=nodes_min - nodes_total, 
                          name_regex=config.queues[ partition].name_regex, 
-                         name_template=config.queues[ partition].name_template)
+                         name_template=config.queues[ partition].name_template,
+                         vm_size=config.queues[ partition].get('vm_size', None))
 
     ### there are jobs queuing, let see what we should do
     # Got room to make some additional nodes
@@ -118,7 +119,8 @@ def update_partition(partition:str=None):
         logger.info("We got stuff to do and long pending times, creating an additional node...")
         ecc.create_nodes(count=1, 
                          name_regex=config.queues[ partition].name_regex, 
-                         name_template=config.queues[ partition].name_)
+                         name_template=config.queues[ partition].name_template,
+                         vm_size=config.queues[ partition].get('vm_size', None) )
 
     # We got extra nodes not needed and we can delete some without going under the min cutoff, so lets get rid of some
     elif nodes_idle:
@@ -135,7 +137,6 @@ def update_partition(partition:str=None):
 def run_daemon() -> None:
     """ Creates the ecc daemon loop that creates and destroys nodes etc.
     """
-
 
     while (True):
         # get the current number of nodes and jobs

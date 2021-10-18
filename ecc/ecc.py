@@ -277,12 +277,23 @@ def delete_nodes(ids:list=[], count:int=None) -> None:
 
 
 
-def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_regex:str=None, name_template:str=None):
+def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_regex:str=None, name_template:str=None, vm_size:str=None):
 
 
 #    resources = openstack.get_resources_available()
     global nodes
     created_nodes = []
+
+    lconfig = config.ecc.copy()
+
+    if name_template is not None:
+        lconfig.name_template = name_template
+
+    if name_regex is not None:
+        lconfig.name_regex = name_regex
+
+    if vm_size is not None:
+        lconfig.vm_size = vm_size
 
     try:
         for _ in range(0, count):
@@ -290,16 +301,13 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_
                 node_name = hostnames.pop(0)
             else:
                 node_id = next_id(names=cloud.server_names(), regex=name_regex)
-                if name_template is not None:
-                    node_name = name_template.format( node_id )    
-                else:
-                    node_name = config.ecc.name_template.format( node_id )
+                node_name = lconfig.name_template.format( node_id )    
 
             print(f"creating node with name {node_name}")
 
             node_id = cloud.server_create( name=node_name,
                                            userdata_file=cloud_init_file,
-                                           **config.ecc )
+                                           **lconfig )
 
 
             if 'cloudflare' in config.ecc:

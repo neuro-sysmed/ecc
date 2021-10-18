@@ -13,7 +13,7 @@ azure:
 ecc:
     log: ecc.log
     sleep: 30
-    name_template: "ecc{}.usegalaxy.no"
+    name_template: "ecc{}"
 
     image: GOLD CentOS 7
     cloud_init: "<PATH>/ecc_node.yaml"

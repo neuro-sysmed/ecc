@@ -105,8 +105,18 @@ def main():
     else:
         print('No backend configured, options are: openstack and azure')
 
-    nodes = ecc.servers(config.ecc.name_regex)
+    nodes = []
+    if 'name_template' in config.ecc:
+        nodes = ecc.servers(config.ecc.name_regex)
+    elif 'queues' not in config:
+        print("Need to configure either a single ecc.name_regex or define some queues")
+        sys.exit(1)
+    else:
+        for queue in config.queues:
+            nodes += ecc.servers(config.queues[queue].name_template)
 
+
+    print( nodes )
 
     # get the current nodes
     #instances.update( condor.nodes() )

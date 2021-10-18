@@ -200,7 +200,7 @@ def slurm_idle_drained_nodes(partition:str=None):
 
     for node_name in nodes:
         node = nodes[ node_name ]
-        if (node.get('slurm_state', None) in ['drain', 'dead'] and 
+        if (node.get('slurm_state', None) in ['drain', 'dead', 'down'] and 
             node.get('vm_state', None) in ['active', 'running'] and 
             node.get('partition', None) == partition ):
             print(f"reviving {node_name}")

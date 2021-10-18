@@ -289,7 +289,7 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], parti
             if len(hostnames):
                 node_name = hostnames.pop(0)
             else:
-                node_id = next_id(names=cloud.server_names(), regex=name_regex)
+                node_id = next_id(names=cloud.server_names(), regex=partition_config.get('name_regex', None))
                 if partition_config  is not None:
                     node_name = partition_config.name_template.format( node_id )    
                     print(f"creating partition node with name {node_name}")

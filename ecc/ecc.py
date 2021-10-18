@@ -277,7 +277,7 @@ def delete_nodes(ids:list=[], count:int=None) -> None:
 
 
 
-def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_regex:str=None, name_template:str=None):
+def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], partition_config:dict=None):
 
 
 #    resources = openstack.get_resources_available()
@@ -290,16 +290,18 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_
                 node_name = hostnames.pop(0)
             else:
                 node_id = next_id(names=cloud.server_names(), regex=name_regex)
-                if name_template is not None:
-                    node_name = name_template.format( node_id )    
+                if partition_config  is not None:
+                    node_name = partition_config.name_template.format( node_id )    
+                    print(f"creating partition node with name {node_name}")
+                    node_id = cloud.server_create( name=node_name,
+                                           userdata_file=cloud_init_file,
+                                           **partition_config )
                 else:
                     node_name = config.ecc.name_template.format( node_id )
-
-            print(f"creating node with name {node_name}")
-
-            node_id = cloud.server_create( name=node_name,
-                                           userdata_file=cloud_init_file,
-                                           **config.ecc )
+                    print(f"creating node with name {node_name}")
+                    node_id = cloud.server_create( name=node_name,
+                                                   userdata_file=cloud_init_file,
+                                                   **config.ecc )
 
 
             if 'cloudflare' in config.ecc:

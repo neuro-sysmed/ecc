@@ -107,18 +107,14 @@ def update_partition(partition:str=None):
         logger.info("We are below the min number of nodes, creating {} nodes".format(
         nodes_min - nodes_total))
 
-        ecc.create_nodes(count=nodes_min - nodes_total, 
-                         name_regex=config.queues[ partition].name_regex, 
-                         name_template=config.queues[ partition].name_template)
+        ecc.create_nodes(count=nodes_min - nodes_total, partition_config=config.queues[ partition])
 
     ### there are jobs queuing, let see what we should do
     # Got room to make some additional nodes
     elif jobs_pending and pending_time['pending_mean'] >= IDLE_TIME and nodes_total < int(nodes_max):
 
         logger.info("We got stuff to do and long pending times, creating an additional node...")
-        ecc.create_nodes(count=1, 
-                         name_regex=config.queues[ partition].name_regex, 
-                         name_template=config.queues[ partition].name_)
+        ecc.create_nodes(count=1, partition_config=config.queues[ partition])
 
     # We got extra nodes not needed and we can delete some without going under the min cutoff, so lets get rid of some
     elif nodes_idle:
@@ -150,6 +146,10 @@ def run_daemon() -> None:
 
 
 
+
+def test( count:int, *config ):
+    pp.pprint( config )
+    sys.exit()
 
 
 def main():

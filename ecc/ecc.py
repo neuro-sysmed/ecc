@@ -275,7 +275,7 @@ def delete_nodes(ids:list=[], count:int=None) -> None:
 
 
 
-def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_regex:str=None):
+def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_regex:str=None, name_template:str=None):
 
 
 #    resources = openstack.get_resources_available()
@@ -288,7 +288,10 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_
                 node_name = hostnames.pop(0)
             else:
                 node_id = next_id(names=cloud.server_names(), regex=name_regex)
-                node_name = config.ecc.name_template.format( node_id )
+                if name_template is not None:
+                    node_name = name_template.format( node_id )    
+                else:
+                    node_name = config.ecc.name_template.format( node_id )
 
             print(f"creating node with name {node_name}")
 
@@ -317,6 +320,8 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_
     except Exception as e:
         logger.warning("Could not create execute server")
         logger.debug("Error: {}".format(e))
+        # for the dev as this is where we crash
+        sys.exit()
         return
 
     for n in created_nodes:

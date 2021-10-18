@@ -221,7 +221,7 @@ def delete_idle_nodes(count:int=1, nodes_to_cull:list=None) -> None:
         nodes = nodes_info().values()
         nodes_to_cull = []
         for n in nodes:
-            if n['slurm_state'] == 'idle' and n['vm_id'] is not None:
+            if n.get('slurm_state', 'idle') == 'idle' and n['vm_id'] is not None:
                 nodes_to_cull.append(n['vm_id'])
 
     delete_nodes( nodes_to_cull[0:count] )

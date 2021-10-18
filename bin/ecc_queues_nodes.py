@@ -98,6 +98,8 @@ def main():
     logger.set_log_level(0)
 
     hosts = readin_inventory(config.ecc.ansible_dir)
+    if args.host_group not in hosts:
+        hosts[args.host_group] = {"hosts":[]}
 
     if 'openstack' in config:
         ecc.openstack_connect(config.openstack)
@@ -106,24 +108,41 @@ def main():
     else:
         print('No backend configured, options are: openstack and azure')
 
-    nodes = []
     if 'name_template' in config.ecc:
         nodes = ecc.servers(config.ecc.name_template.format("([01-99])"))
+        for node in nodes:
+#        print( node )
+            if len( node['ip']) == 0:
+                continue
+            ip_addr = node['ip'][0]
+            node_name = node['name']
+            hosts[f"{args.host_group}"]['hosts'].append( node_name )
+            hosts["_meta"]['hostvars'][node_name] = {'ansible_host': ip_addr,
+                                                     'ansible_user':args.ansible_user,
+                                                     'trusted_host': args.trusted_host}
     elif 'queues' not in config:
         print("Need to configure either a single ecc.name_regex or define some queues")
         sys.exit(1)
     else:
         for queue in config.queues:
-            nodes += ecc.servers(config.queues[queue].name_template.format("([01-99])"))
+            nodes = ecc.servers(config.queues[queue].name_template.format("([01-99])"))
+            for node in nodes:
+                if len( node['ip']) == 0:
+                    continue
+                ip_addr = node['ip'][0]
+                node_name = node['name']
+                hosts[f"{queue}"]['hosts'].append( node_name )
+                hosts["_meta"]['hostvars'][node_name] = {'ansible_host': ip_addr,
+                                                         'ansible_user':args.ansible_user,
+                                                         'trusted_host': args.trusted_host}
 
 
-    print( nodes )
+
+#    print( nodes )
 
     # get the current nodes
     #instances.update( condor.nodes() )
     #nodes = instances.node_state_counts()
-    if args.host_group not in hosts:
-        hosts[args.host_group] = {"hosts":[]}
     for node in nodes:
 #        print( node )
         if len( node['ip']) == 0:

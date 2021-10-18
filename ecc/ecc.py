@@ -325,7 +325,7 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_
         return
 
     for n in created_nodes:
-        online = ecc_utils.check_host_port(n, 22, duration=180 )
+        online = ecc_utils.check_host_port(n, 22, duration=180, delay=20 )
         if not online:
             logger.warn(f"{n} is not online yet")
             return None

@@ -42,7 +42,7 @@ def check_host_port(host, port, duration=10, delay=2):
             s.shutdown(socket.SHUT_RDWR)
             return True
         except:
-            logger.debug(f"retrying polling on {host}:{port}")
+            logger.debug(f"retrying polling on {host}:{port} t:{tmax-time.time()}")
             if delay:
                 time.sleep(delay)
     return False

@@ -152,6 +152,10 @@ def run_daemon() -> None:
 
 
 
+def test( count:int, *config ):
+    pp.pprint( config )
+    sys.exit()
+
 
 def main():
 

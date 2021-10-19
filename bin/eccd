@@ -74,11 +74,6 @@ def update_partition(partition:str=None):
 
     ecc.slurm_idle_drained_nodes(partition=partition)
 
-    nodes_total = ecc.nodes_total(partition=partition)
-    unregistered_nodes = ecc.unregistered_nodes(partition=partition)
-    nodes_idle = ecc.nodes_idle_timelimit(limit=IDLE_TIME, partition=partition)
-    jobs_pending = slurm_utils.jobs_pending(partition=partition)
-    pending_time = slurm_utils.pending_time(partition=partition)
 
     nodes_min = 0
     if partition is not None:
@@ -92,6 +87,15 @@ def update_partition(partition:str=None):
     elif 'nodes_max' in config.ecc:
         nodes_max = config.ecc.nodes_max
 
+    idle_time = IDLE_TIME
+    if 'idle_time' in config.queues[ partition]:
+        idle_time = config.queues[ partition].idle_time
+
+    nodes_total = ecc.nodes_total(partition=partition)
+    unregistered_nodes = ecc.unregistered_nodes(partition=partition)
+    nodes_idle = ecc.nodes_idle_timelimit(limit=idle_time, partition=partition)
+    jobs_pending = slurm_utils.jobs_pending(partition=partition)
+    pending_time = slurm_utils.pending_time(partition=partition)
 
 
     print(f"nodes_total: {nodes_total}, nodes_idle: {len(nodes_idle)}, jobs_pending: {jobs_pending}")
@@ -114,7 +118,7 @@ def update_partition(partition:str=None):
 
     ### there are jobs queuing, let see what we should do
     # Got room to make some additional nodes
-    elif jobs_pending and pending_time['pending_mean'] >= IDLE_TIME and nodes_total < int(nodes_max):
+    elif jobs_pending and pending_time['pending_mean'] >= idle_time and nodes_total < int(nodes_max):
 
         logger.info("We got stuff to do and long pending times, creating an additional node...")
         ecc.create_nodes(count=1, 

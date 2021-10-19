@@ -99,7 +99,7 @@ def update_partition(partition:str=None):
 
 
     print(f"nodes_total: {nodes_total}, nodes_idle: {len(nodes_idle)}, jobs_pending: {jobs_pending}")
-    print(f"mean pending time: {pending_time['pending_mean']}, max pending time: {pending_time['max']}")
+    print(f"mean pending time: {pending_time['pending_mean']}, max pending time: {pending_time['max']} configured idle time: {idle_time}")
 
     # this should not happen anymore as we wait for the server to come online before running the ecc-playbook
     if unregistered_nodes != []:
@@ -153,12 +153,6 @@ def run_daemon() -> None:
         logger.info("Napping for {} second(s).".format(config.ecc.sleep))
         time.sleep(config.ecc.sleep)
 
-
-
-
-def test( count:int, *config ):
-    pp.pprint( config )
-    sys.exit()
 
 
 def main():

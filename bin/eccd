@@ -61,11 +61,6 @@ def init(args):
 
 
 def update_partition(partition:str=None):
-    if partition is not None:
-        print( f"Updating partition: '{partition}'")
-    else:
-        print( f"Updating all nodes in partitions")
-
 
     ecc.slurm_idle_drained_nodes(partition=partition)
 
@@ -86,8 +81,7 @@ def update_partition(partition:str=None):
     pending_time = slurm_utils.pending_time(partition=partition)
 
 
-    print(f"nodes_total: {nodes_total}, nodes_idle: {len(nodes_idle)}, jobs_pending: {jobs_pending}")
-    print(f"mean pending time: {pending_time['pending_mean']}, max pending time: {pending_time['max']} configured idle time: {idle_time}")
+    logger.info(f"{partition} :: nodes: {nodes_total}, idle: {len(nodes_idle)}, pending: {jobs_pending}, mean pending time: {pending_time['pending_mean']}, max pending time: {pending_time['max']} configured idle time: {idle_time}")
 
     # this should not happen anymore as we wait for the server to come online before running the ecc-playbook
     if unregistered_nodes != []:

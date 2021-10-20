@@ -115,7 +115,7 @@ def update_partition(partition:str=None):
         ecc.delete_idle_nodes(nodes_to_cull=nodes_idle)
 
     else:
-        logger.info(f"{partition} :: Nothing to change.")
+        logger.debug(f"{partition} :: Nothing to change.")
 
 
 

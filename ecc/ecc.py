@@ -257,7 +257,7 @@ def delete_nodes(ids:list=[], count:int=None) -> None:
             id = nodes[id]['vm_id']
 
         try:
-            logger.info("deleting node {}".format( re.sub(r'.*/','', id ))
+            logger.info("deleting node {}".format( re.sub(r'.*/','', id )))
             vm = cloud.server( id )
         except:
             continue

@@ -305,7 +305,7 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_
                 node_id = next_id(names=cloud.server_names(), regex=name_regex)
                 node_name = lconfig.name_template.format( node_id )    
 
-            print(f"creating node with name {node_name}")
+            logger.info(f"creating node with name {node_name}")
 
             node_id = cloud.server_create( name=node_name,
                                            userdata_file=cloud_init_file,
@@ -358,7 +358,7 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_
 
 def next_id(names, regex:str=None) -> int:
 
-    print(f"Node names {names}")
+#    print(f"Node names {names}")
 
     if regex is None:
         regex = config.ecc.name_regex

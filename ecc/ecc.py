@@ -271,7 +271,7 @@ def delete_nodes(ids:list=[], count:int=None) -> None:
         del nodes[vm.name]
 
     if 'ansible_cmd' in config.ecc:
-        logger.info('running playbook')
+        logger.info('Running playbook')
         ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
 
     return
@@ -346,6 +346,7 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_
 
 
     if 'ansible_cmd' in config.ecc:
+        logger.info('Running playbook')
         ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
     
     for n in created_nodes:

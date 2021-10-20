@@ -82,7 +82,7 @@ class Azure(object):
                     ).result()
 
 
-      print( network_interface )
+#      print( network_interface )
 
       vm_config = { "location": "westeurope",
                   "hardware_profile": {

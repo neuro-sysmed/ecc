@@ -21,6 +21,7 @@ import ecc
 import ecc.cloudflare_utils as cloudflare_utils
 import ecc.ansible_utils as ansible_utils
 import ecc.slurm_utils as slurm_utils
+import ecc.config_utils as ecc_config_utils
 
 version = version_utils.as_string('ecc')
 config = None
@@ -31,6 +32,8 @@ def init(args):
     global config
     if args.config and os.path.isfile( args.config ):
         config = config_utils.readin_config_file(args.config)
+        config = ecc_config_utils.regexify_name_templates( config )
+
         logger.init(name=program_name, log_file=config.ecc.get('logfile', None))
         logger.set_log_level(args.verbose)
         logger.info(f'{program_name} (v:{version})')

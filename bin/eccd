@@ -23,6 +23,7 @@ import ecc
 import ecc.slurm_utils as slurm_utils
 import ecc.cloudflare_utils as cloudflare_utils
 import ecc.ansible_utils as ansible_utils
+import ecc.config_utils as ecc_config_utils
 
 
 version = version_utils.as_string('ecc')
@@ -36,17 +37,11 @@ def init(args):
     global config
     if args.config and os.path.isfile( args.config ):
         config = config_utils.readin_config_file(args.config)
+        config = ecc_config_utils.regexify_name_templates( config )
+
         logger.init(name=program_name, log_file=config.ecc.get('logfile', None))
         logger.set_log_level(args.verbose)
         logger.info(f'{program_name} (v:{version})')
-        if 'name_template' in config.ecc:
-            config.ecc.name_regex = config.ecc.name_template.format("(\d+)")
-        elif 'queues' not in config:
-            print("Need to configure either a single ecc.name_regex or define some queues")
-            sys.exit(1)
-        else:
-            for queue in config.queues:
-                config.queues[queue].name_regex = config.queues[queue].name_template.format("(\d+)")
 
 
         ecc.set_config(config)
@@ -74,22 +69,15 @@ def update_partition(partition:str=None):
 
     ecc.slurm_idle_drained_nodes(partition=partition)
 
-
-    nodes_min = 0
+    nodes_min = config.ecc.get('nodes_min',0)
     if partition is not None:
         nodes_min = config.queues[ partition].nodes_min
-    elif 'nodes_min' in config.ecc:
-        nodes_min = config.ecc.nodes_min
 
-    nodes_max = 10
+    nodes_max = config.ecc.get('nodes_max',10)
     if partition is not None:
-        nodes_max = config.queues[ partition].nodes_max
-    elif 'nodes_max' in config.ecc:
-        nodes_max = config.ecc.nodes_max
+        nodes_max = config.queues[ partition ].nodes_max
 
-    idle_time = IDLE_TIME
-    if 'idle_time' in config.queues[ partition]:
-        idle_time = config.queues[ partition].idle_time
+    idle_time = config.queues[ partition].get('idle_time', IDLE_TIME)
 
     nodes_total = ecc.nodes_total(partition=partition)
     unregistered_nodes = ecc.unregistered_nodes(partition=partition)

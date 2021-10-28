@@ -99,7 +99,7 @@ def delete_vms(ids: list):
         count = int(ids[0])
         ecc.delete_nodes(count=count)
     except:
-        ecc.delete_nodes(ids)
+        ecc.delete_nodes(ids=ids)
 
 
 def list_vms(commands):

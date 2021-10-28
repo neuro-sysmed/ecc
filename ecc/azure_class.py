@@ -94,10 +94,10 @@ class Azure(object):
                   "storage_profile": {
                     "image_reference": {
                       #? "id": "/subscriptions/5a9e26a0-6897-44d6-963e-fae2a2061f27/resourceGroups/FOR-NEURO-SYSMED-UTV-COMPUTE/providers/Microsoft.Compute/images/circ-rna-v1-img"
-                      "sku": "8_2",
-                      "publisher": "Openlogic",
-                      "version": "latest",
-                      "offer": "centos"
+                      "publisher": "canonical",
+                      "offer": "0001-com-ubuntu-server-focal",
+                      "sku": "20_04-lts-gen2",
+                      "version": "latest"
                     },
                     "os_disk": {
                       "caching": "ReadWrite",

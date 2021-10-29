@@ -39,6 +39,8 @@ def init(args):
         logger.set_log_level(args.verbose)
         logger.info(f'{program_name} (v:{version})')
 
+        logger.debug('Connecting to cloud')
+
         if 'openstack' in config:
             ecc.openstack_connect(config.openstack)
         elif 'azure' in config:

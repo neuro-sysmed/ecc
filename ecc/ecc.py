@@ -330,8 +330,8 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_
 
 
     except Exception as e:
-        logger.warning("Could not create execute server")
-        logger.debug("Error: {}".format(e))
+        logger.warning("Could not create VM server")
+        logger.critical("Error: {}".format(e))
         # for the dev as this is where we crash
         sys.exit()
         return

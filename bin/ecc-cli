@@ -33,21 +33,12 @@ def init(args):
     if args.config and os.path.isfile( args.config ):
         config = config_utils.readin_config_file(args.config)
         config = ecc_config_utils.regexify_name_templates( config )
+        ecc.set_config(config)
 
         logger.init(name=program_name, log_file=config.ecc.get('logfile', None))
         logger.set_log_level(args.verbose)
         logger.info(f'{program_name} (v:{version})')
 
-        if 'name_template' in config.ecc:
-            config.ecc.name_regex = config.ecc.name_template.format("(\d+)")
-        elif 'queues' not in config:
-            print("Need to configure either a single ecc.name_regex or define some queues")
-            sys.exit(1)
-        else:
-            for queue in config.queues:
-                config.queues[queue].name_regex = config.queues[queue].name_template.format("(\d+)")
-
-        ecc.set_config(config)
         if 'openstack' in config:
             ecc.openstack_connect(config.openstack)
         elif 'azure' in config:
@@ -58,9 +49,11 @@ def init(args):
         if 'cloudflare' in config.ecc:
             cloudflare_utils.init(config.ecc.cloudflare_apikey, config.ecc.cloudflare_email)
     else:
-        logger.init(name=program_name)
+        logger.init(name=program_name) 
         logger.set_log_level(args.verbose)
         logger.info(f'{program_name} (v:{version})')
+        logger.critical('No config file available. Either provide one or set export ECC_CONF=...')
+        sys.exit()
 
 
 def add_vms(commands):
@@ -214,9 +207,6 @@ def main():
         sys.exit()
     elif command == 'jobs':
         list_jobs(args.command)
-        sys.exit()
-    elif command == 'init':
-        ecc.write_config_file()
         sys.exit()
     else:
         print("The tool support the following commands: {}\n".format(string_utils.comma_sep(commands)))

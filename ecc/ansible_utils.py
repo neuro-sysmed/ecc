@@ -27,6 +27,7 @@ def run_playbook(cmd:str, cwd:str=None):
     if r.p_status != 0:
         print( "Playbook failed" )
         print( r.stdout )
+        print( r.stderr )
         raise RuntimeError
 
     playbook_log = json.loads(r.stdout)

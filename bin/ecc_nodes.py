@@ -57,19 +57,19 @@ def readin_inventory(ansible_dir:str) -> dict:
     hosts = {"_meta": {"hostvars":{}}}
 
 
-    # for section in config.sections():
-    #     hosts[section] = {}
-    #     hosts[section]["hosts"] = []
-    #     for key in config[section].keys():
-    #         line = f"{key}={''.join(config[section][key])}"
+    for section in config.sections():
+        hosts[section] = {}
+        hosts[section]["hosts"] = []
+        for key in config[section].keys():
+            line = f"{key}={''.join(config[section][key])}"
 
-    #         fields = line.split()
-    #         host = fields[ 0 ]
-    #         hosts[section]["hosts"].append( host )
-    #         hosts["_meta"]['hostvars'][host] = {}
-    #         for f in fields[1:]:
-    #             key, value = f.split("=")
-    #             hosts["_meta"]['hostvars'][host][key] = value
+            fields = line.split()
+            host = fields[ 0 ]
+            hosts[section]["hosts"].append( host )
+            hosts["_meta"]['hostvars'][host] = {}
+            for f in fields[1:]:
+                key, value = f.split("=")
+                hosts["_meta"]['hostvars'][host][key] = value
 
 
     return hosts

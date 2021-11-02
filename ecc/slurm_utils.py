@@ -2,6 +2,7 @@ import re
 
 import kbr.run_utils as run_utils
 import kbr.datetime_utils as datetime_utils
+import kbr.log_utils as logger
 
 def available() -> bool:
     try:
@@ -85,7 +86,7 @@ def pending_time(partition:str=None) -> dict:
             continue
         fields = line.split()
         pending_time = (datetime_utils.now() - datetime_utils.to_datetime(fields[1])).seconds
-        all_pending_times.append( int( fields[1]))
+        all_pending_times.append( pending_time )
         if fields[0] == 'PENDING':
             pending_times.append(pending_time)
 
@@ -241,7 +242,10 @@ def add_cloud_node(name, ip_address):
 
 def update_node_state(name, state:str='idle'):
     cmd = f"scontrol update nodename={name} state={state}"
-    run = run_utils.launch_cmd( cmd )
+    r = run_utils.launch_cmd( cmd )
+    if r.p_status != 0:
+        logger.critical( "scontrol error: {r.stderr}")
+
 
 def set_node_down(name:str):
     update_node_state(name, 'down')

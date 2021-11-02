@@ -39,16 +39,24 @@ def check_host_port(host, port, duration=10, delay=2, ip:str=None):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout( 5 )
             s.connect((host, int(port)))
-
-            if ip is not None:
-              s.connect((ip, int(port)))
-
             s.shutdown(socket.SHUT_RDWR)
             return True
         except:
-            logger.debug(f"retrying polling on {host}:{port} t:{tmax-time.time()}")
-            if delay:
-                time.sleep(delay)
+            print("failed host/port connection")
+            try: 
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout( 5 )
+                s.connect((ip, int(port)))
+                s.shutdown(socket.SHUT_RDWR)
+                return True
+            except:
+                print("failed host/port connection")
+
+                logger.debug(f"retrying polling on {host}:{port}/{ip}:{port} t:{tmax - time.time():.2f} left")
+
+        if delay:
+            time.sleep(delay)
+
     return False
 
 

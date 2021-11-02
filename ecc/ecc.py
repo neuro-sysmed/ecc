@@ -339,12 +339,12 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_
         return
 
     for index, name in enumerate(created_nodes):
-        online = ecc_utils.check_host_port(n, 22, duration=180, delay=20, ip=created_ips[ index ] )
+        online = ecc_utils.check_host_port(name, 22, duration=180, delay=20, ip=created_ips[ index ] )
         if not online:
-            logger.warn(f"{n} is not online yet")
+            logger.warn(f"{name} is not online yet")
             return None
         else:
-            logger.info(f"{n} is online")
+            logger.info(f"{name} is online")
 
 
     if 'ansible_cmd' in config.ecc:

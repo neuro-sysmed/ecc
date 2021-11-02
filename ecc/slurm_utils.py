@@ -1,6 +1,7 @@
 import re
 
 import kbr.run_utils as run_utils
+import kbr.datetime_utils as datetime_utils
 
 def available() -> bool:
     try:
@@ -61,7 +62,8 @@ def pending_time(partition:str=None) -> dict:
     #RUNNING             2451    
 
 
-    cmd = "squeue -O state,pendingtime -h"
+#    cmd = "squeue -O state,pendingtime -h"
+    cmd = "squeue -O state,SubmitTime -h"
 
     if partition is not None:
         cmd += f' -p {partition}'
@@ -82,9 +84,10 @@ def pending_time(partition:str=None) -> dict:
         if line == '':
             continue
         fields = line.split()
+        pending_time = (datetime_utils.now() - datetime_utils.to_datetime(fields[1])).seconds
         all_pending_times.append( int( fields[1]))
         if fields[0] == 'PENDING':
-            pending_times.append( int( fields[1]))
+            pending_times.append(pending_time)
 
     if pending_times != []:
         max_wait = max(pending_times)

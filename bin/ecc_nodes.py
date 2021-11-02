@@ -36,7 +36,7 @@ import ecc.utils
 
 def readin_inventory(ansible_dir:str) -> dict:
 
-    inventory = f"{ansible_dir}/hosts   "
+    inventory = f"{ansible_dir}/hosts"
 
     if os.path.isfile(f"{ansible_dir}/ansible.cfg"):
         config = configparser.ConfigParser()

@@ -285,6 +285,7 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_
 #    resources = openstack.get_resources_available()
     global nodes
     created_nodes = []
+    created_ips   = []
 
     lconfig = config.ecc.copy()
 
@@ -327,6 +328,7 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_
             nodes[node_name]['ip'] = node_ips
             
             created_nodes.append(node_name)
+            created_ips.append( node_ips[0])
 
 
     except Exception as e:
@@ -336,8 +338,8 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_
         sys.exit()
         return
 
-    for n in created_nodes:
-        online = ecc_utils.check_host_port(n, 22, duration=180, delay=20 )
+    for index, name in enumerate(created_nodes):
+        online = ecc_utils.check_host_port(n, 22, duration=180, delay=20, ip=created_ips[ index ] )
         if not online:
             logger.warn(f"{n} is not online yet")
             return None

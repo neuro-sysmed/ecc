@@ -14,7 +14,7 @@ from munch import Munch
 
 import kbr.log_utils as logger
 
-def check_host_port(host, port, duration=10, delay=2):
+def check_host_port(host, port, duration=10, delay=2, ip:str=None):
     """Repeatedly try if a port on a host is open until duration seconds passed
     
     Parameters
@@ -39,6 +39,10 @@ def check_host_port(host, port, duration=10, delay=2):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout( 5 )
             s.connect((host, int(port)))
+
+            if ip is not None:
+              s.connect((ip, int(port)))
+
             s.shutdown(socket.SHUT_RDWR)
             return True
         except:

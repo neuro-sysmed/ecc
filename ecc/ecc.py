@@ -23,7 +23,7 @@ import ecc.slurm_utils as slurm_utils
 import ecc.utils as ecc_utils
 import ecc.ansible_utils as ansible_utils
 import ecc.cloudflare_utils as cloudflare_utils
-from ecc.utils import make_node_name
+
 
 # Not sure if this is still needed.
 import logging
@@ -201,11 +201,11 @@ def slurm_idle_drained_nodes(partition:str=None):
     revived = 0
 
     for node_name in nodes:
-        node = nodes[ node_name ]
+        node = nodes[ node_name ]        
         if (node.get('slurm_state', None) in ['drain', 'dead', 'down'] and 
             node.get('vm_state', None) in ['active', 'running'] and 
             node.get('partition', None) == partition ):
-            print(f"reviving {node_name}")
+            logger.info(f"reviving {node_name}")
             slurm_utils.set_node_resume(node_name)
             revived += 1
 

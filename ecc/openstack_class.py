@@ -166,7 +166,7 @@ class Openstack(object):
         return self._connection.compute.find_server(id)
 
 
-    def server_names(self) -> []:
+    def server_names(self) -> list:
         names = []
         for server in self.servers():
             names.append(server['name'])
@@ -676,7 +676,7 @@ class Openstack(object):
 
         return None
 
-    def volumes_attached_to_server(self, server_id: str) -> []:
+    def volumes_attached_to_server(self, server_id: str) -> list:
         """ Find the server attached to a volume, if none returns None
 
         Args:

@@ -42,7 +42,6 @@ def check_host_port(host, port, duration=10, delay=2, ip:str=None):
             s.shutdown(socket.SHUT_RDWR)
             return True
         except:
-            print("failed host/port connection")
             try: 
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.settimeout( 5 )
@@ -50,8 +49,6 @@ def check_host_port(host, port, duration=10, delay=2, ip:str=None):
                 s.shutdown(socket.SHUT_RDWR)
                 return True
             except:
-                print("failed host/port connection")
-
                 logger.debug(f"retrying polling on {host}:{port}/{ip}:{port} t:{tmax - time.time():.2f} left")
 
         if delay:
@@ -205,38 +202,6 @@ def get_node_id(filename:str='/var/lib/cloud/data/instance-id') -> str:
     return id
 
 
-def get_configuration( config_file:str) -> Munch:
-
-    config = readin_config_file( config_file)
-  #  pp.pprint( config )
-  #  print( config.daemon.use_db_settings  )
-
-    if 'use_db_settings' in config.daemon and config.daemon.use_db_settings == True:
-        logger.info( 'Using the database for config/settings')
-        store_config_in_db_if_empty(config.daemon.database, config)
-        config = config_from_db( config.daemon.database )
-
-    return config
-
-def get_configurations( config_files:list) -> Munch:
-
-    config = Munch()
-
-    for config_file in config_files:
-        next_config = readin_config_file( config_file)
-        # Merge contents of dict2 in dict1
-        config.update(next_config)
-
-    if 'use_db_settings' in config.daemon and config.daemon.use_db_settings == True:
-        logger.info( 'Using the database for config/settings')
-        store_config_in_db_if_empty(config.daemon.database, config)
-        config = config_from_db( config.daemon.database )
-
-
-    return config
-
-
-
 def readin_config_file(config_file:str) -> Munch:
     """ reads in and checks the config file
 
@@ -269,7 +234,7 @@ def dict_validation(data:dict, template:dict) -> bool:
             raise KeyError
 
         if not isinstance(data[key], type(template[key])):
-            print("Key value error: Expected {}, got a {}".format( type(template[key]), type(data[key])))
+            logger.critical("Key value error: Expected {}, got a {}".format( type(template[key]), type(data[key])))
             raise AttributeError
 
         if isinstance(data[ key ], dict):

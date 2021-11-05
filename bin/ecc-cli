@@ -46,7 +46,8 @@ def init(args):
         elif 'azure' in config:
             ecc.azure_connect( config.azure )
         else:
-            print('No backend configured, options are: openstack and azure')
+            logger.critical('No backend configured, options are: openstack and azure')
+            sys.exit(1)
         
         if 'cloudflare' in config.ecc:
             cloudflare_utils.init(config.ecc.cloudflare_apikey, config.ecc.cloudflare_email)

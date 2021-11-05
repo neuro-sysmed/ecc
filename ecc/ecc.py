@@ -122,7 +122,7 @@ def update_nodes_status() -> None:
 
 
     for node_name in nodes_copy:
-        print( f"{node_name} no longer in list, removing it")
+        logger.debug( f"{node_name} no longer in list, removing it")
         del nodes[ node_name ]
 
 
@@ -253,7 +253,7 @@ def delete_nodes(ids:list=[], count:int=None) -> None:
             continue 
         
         if id in nodes:
-            print(f'deleting: changing id from {id} to {nodes[id]["vm_id"]}')
+            logger.debug(f'deleting: changing id from {id} to {nodes[id]["vm_id"]}')
             id = nodes[id]['vm_id']
 
         try:
@@ -317,7 +317,7 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_
                 try:
                     cloudflare_utils.add_record('A', node_name, node_ips[0], 1000)
                 except:
-                    print(f"failed to add dns entry: 'add_record('A', {node_name}, {node_ips[0]}, 1000)'")
+                    logger.error(f"failed to add dns entry: 'add_record('A', {node_name}, {node_ips[0]}, 1000)'")
 
 
             node_ips = cloud.server_ip(node_id)
@@ -332,7 +332,7 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_
 
 
     except Exception as e:
-        logger.warning("Could not create VM server")
+        logger.critical("Could not create VM server")
         logger.critical("Error: {}".format(e))
         # for the dev as this is where we crash
         sys.exit()

@@ -58,7 +58,7 @@ class Azure(object):
         self._compute_client  = ComputeManagementClient(self._credential, Subscription_Id)
         self._network_client  = NetworkManagementClient(self._credential, Subscription_Id)
 
-        logger.debug("Connected to azure cloud")
+        logger.info("Connected to azure cloud")
 
     def server_create(self, name: str, vm_size:str, 
                       network_group:str, compute_group:str, 
@@ -229,7 +229,7 @@ class Azure(object):
 
         self._compute_client.virtual_machines.power_off(compute_group, id).result()
 
-        logger.debug("Stopped server id:{}".format(id))
+        logger.info("Stopped server id:{}".format(id))
 
 
     def get_images(self, compute_group:str, name:str=None, **kwargs):

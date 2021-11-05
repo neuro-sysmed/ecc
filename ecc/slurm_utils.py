@@ -198,7 +198,7 @@ def node_state(id:str) -> str:
     for line in info.split('\n'):
 #        State=IDLE
         state = re.match(r'State=(w+)', line)
-        print(state)
+        logger.debug(f"Node state: {state}")
         if state:
             return state
 
@@ -210,7 +210,7 @@ def node_cpu_info(id:str) -> dict:
     info = _show_node(id)
     for line in info.split('\n'):
         cpus = re.match(r'CPUAlloc=(\d+) CPUTot=(\d+) CPULoad=(\d+.\d\d)', line)
-        print(cpus)
+        logger.debug(f"CPUs: {cpus}")
         if cpus:
             return cpus
 
@@ -245,6 +245,7 @@ def update_node_state(name, state:str='idle'):
     r = run_utils.launch_cmd( cmd )
     if r.p_status != 0:
         logger.critical( "scontrol error: {r.stderr}")
+        raise RuntimeError
 
 
 def set_node_down(name:str):

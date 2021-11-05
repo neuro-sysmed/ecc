@@ -4,6 +4,7 @@ import pprint as pp
 import os
 
 import kbr.run_utils as run_utils
+import kbr.log_utils as logger
 
 def file_path(filename:str=None) -> str:
     if filename is None:
@@ -20,14 +21,13 @@ def run_playbook(cmd:str, cwd:str=None):
 
     cmd = f"ANSIBLE_STDOUT_CALLBACK=ansible.posix.json ANSIBLE_HOST_KEY_CHECKING=False {cmd}"
 
-#    print(cwd, cmd)
+    logger.debug(f"Working die: {cwd}, CMD: {cmd}")
     r = run_utils.launch_cmd(cmd, cwd=cwd, use_shell_env=True)
 
     # the playbook failed!
     if r.p_status != 0:
-        print( "Playbook failed" )
-        print( r.stdout )
-        print( r.stderr )
+        logger.critical( "Playbook failed" )
+        logger.critical( r.stderr )
         raise RuntimeError
 
     playbook_log = json.loads(r.stdout)

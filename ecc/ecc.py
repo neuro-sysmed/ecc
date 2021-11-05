@@ -205,7 +205,7 @@ def slurm_idle_drained_nodes(partition:str=None):
         if (node.get('slurm_state', None) in ['drain', 'dead', 'down'] and 
             node.get('vm_state', None) in ['active', 'running'] and 
             node.get('partition', None) == partition ):
-            logger.info(f"reviving {node_name}, current state: {node.get('slurm_state', 'NA')}")
+            logger.info(f"reviving {node_name}, current state: {node.get('slurm_state', 'NA')}")            
             slurm_utils.set_node_resume(node_name)
             revived += 1
 
@@ -352,7 +352,11 @@ def create_nodes(cloud_init_file:str=None, count:int=1, hostnames:list=[], name_
         ansible_utils.run_playbook(config.ecc.ansible_cmd, cwd=config.ecc.ansible_dir)
     
     for n in created_nodes:
-        slurm_utils.update_node_state( n, "resume")
+        try:
+            slurm_utils.update_node_state( n, "resume")
+        except:
+            logger.error('Could not resume node, ignoring issue')
+            pass
 
 
     return node_name

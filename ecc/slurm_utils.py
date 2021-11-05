@@ -244,7 +244,8 @@ def update_node_state(name, state:str='idle'):
     cmd = f"scontrol update nodename={name} state={state}"
     r = run_utils.launch_cmd( cmd )
     if r.p_status != 0:
-        logger.critical( "scontrol error: {r.stderr}")
+
+        logger.critical( f"scontrol error: {cmd} -- {r.stderr}")
         raise RuntimeError
 
 

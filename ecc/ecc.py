@@ -205,7 +205,7 @@ def slurm_idle_drained_nodes(partition:str=None):
         if (node.get('slurm_state', None) in ['drain', 'dead', 'down'] and 
             node.get('vm_state', None) in ['active', 'running'] and 
             node.get('partition', None) == partition ):
-            logger.info(f"reviving {node_name}")
+            logger.info(f"reviving {node_name}, current state: {node.get('slurm_state', 'NA')}")
             slurm_utils.set_node_resume(node_name)
             revived += 1
 

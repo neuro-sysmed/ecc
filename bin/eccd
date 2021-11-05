@@ -65,7 +65,11 @@ def init(args):
 
 def update_partition(partition:str=None):
 
-    ecc.slurm_idle_drained_nodes(partition=partition)
+    try:
+        ecc.slurm_idle_drained_nodes(partition=partition)
+    except:
+        logger.error('Could not undrain node, ignoring issue')
+        pass
 
     nodes_min = config.ecc.get('nodes_min',0)
     if partition is not None:

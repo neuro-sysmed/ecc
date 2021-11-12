@@ -105,6 +105,15 @@ def update_partition(partition:str=None):
                          vm_size=config.queues[ partition].get('vm_size', None))
 
     ### there are jobs queuing, let see what we should do
+    # Have no nodes, but things to do, kick off a single node
+    elif jobs_pending and nodes_total == 0:
+
+        logger.info(f"{partition} :: creating 1 node...")
+        ecc.create_nodes(count=1, 
+                         name_regex=config.queues[ partition].name_regex, 
+                         name_template=config.queues[ partition].name_template,
+                         vm_size=config.queues[ partition].get('vm_size', None) )
+
     # Got room to make some additional nodes
     elif jobs_pending and pending_time['pending_mean'] >= idle_time and nodes_total < int(nodes_max):
 
@@ -113,7 +122,6 @@ def update_partition(partition:str=None):
                          name_regex=config.queues[ partition].name_regex, 
                          name_template=config.queues[ partition].name_template,
                          vm_size=config.queues[ partition].get('vm_size', None) )
-
     # We got extra nodes not needed and we can delete some without going under the min cutoff, so lets get rid of some
     elif nodes_idle:
 

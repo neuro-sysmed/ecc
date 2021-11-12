@@ -174,6 +174,7 @@ def nodes_idle_timelimit(update:bool=False, limit:int=300, partition:str=None) -
            node.get('partition', None) == partition):
             idle_time = ecc_utils.timestamp() - node['timestamp'] 
             if idle_time >= limit:
+                logger.info(f"{node['vm_id']} has idled for {idle_time}, registering for deletion")
                 idle_nodes.append(node['vm_id'])
 
     return idle_nodes
